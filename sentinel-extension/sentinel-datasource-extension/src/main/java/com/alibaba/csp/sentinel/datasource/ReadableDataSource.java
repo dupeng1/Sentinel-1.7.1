@@ -25,6 +25,15 @@ import com.alibaba.csp.sentinel.property.SentinelProperty;
  * @author leyou
  * @author Eric Zhao
  */
+
+/**
+ * 动态数据源，
+ * 1、可以调用getProperty方法获取动态数据源提供的SentinelProperty实例
+ * 2、并将此SentinelProperty实例注册给规则管理器
+ * 3、这样动态数据源在读取到配置时就可以调用自身SentinelProperty实例的updateValue方法通知规则管理器更新规则
+ * @param <S>   代表用于装在从数据源中读取的配置的类型
+ * @param <T>   代表对应Sentinel中的规则类型
+ */
 public interface ReadableDataSource<S, T> {
 
     /**
@@ -33,6 +42,7 @@ public interface ReadableDataSource<S, T> {
      * @return the target data.
      * @throws Exception IO or other error occurs
      */
+    //加载配置
     T loadConfig() throws Exception;
 
     /**
@@ -41,6 +51,7 @@ public interface ReadableDataSource<S, T> {
      * @return the original data.
      * @throws Exception IO or other error occurs
      */
+    //从数据源中读取配置，数据源既可以是yaml配置文件，也可以是MySQL、Redis，由实现类决定从哪种数据源中读取配置
     S readSource() throws Exception;
 
     /**
@@ -48,6 +59,7 @@ public interface ReadableDataSource<S, T> {
      *
      * @return the property.
      */
+    //获取SentinelProperty实例
     SentinelProperty<T> getProperty();
 
     /**
@@ -55,5 +67,6 @@ public interface ReadableDataSource<S, T> {
      *
      * @throws Exception IO or other error occurs
      */
+    //用于关闭数据源
     void close() throws Exception;
 }

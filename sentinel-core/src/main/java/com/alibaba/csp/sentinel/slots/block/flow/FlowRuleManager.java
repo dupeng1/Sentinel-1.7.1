@@ -52,8 +52,9 @@ public class FlowRuleManager {
 
     //缓存限流规则配置，key为资源名称，value是一个FlowRule集合
     private static final Map<String, List<FlowRule>> flowRules = new ConcurrentHashMap<String, List<FlowRule>>();
-
+    //PropertyListener 接口的实现类实例，用于监听规则配置更新，在规则配置更新时更新flowRules字段缓存的限流规则配置
     private static final FlowPropertyListener LISTENER = new FlowPropertyListener();
+    //当前使用的SentinelProperty实例，默认会创建一个DynamicSentinelProperty实例
     private static SentinelProperty<List<FlowRule>> currentProperty = new DynamicSentinelProperty<List<FlowRule>>();
 
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
@@ -61,6 +62,7 @@ public class FlowRuleManager {
         new NamedThreadFactory("sentinel-metrics-record-task", true));
 
     static {
+        //给默认的SentinelProperty注册监听器FlowPropertyListener
         currentProperty.addListener(LISTENER);
         SCHEDULER.scheduleAtFixedRate(new MetricTimerListener(), 0, 1, TimeUnit.SECONDS);
     }
@@ -71,6 +73,7 @@ public class FlowRuleManager {
      *
      * @param property the property to listen.
      */
+    //注册SentinelProperty
     public static void register2Property(SentinelProperty<List<FlowRule>> property) {
         AssertUtil.notNull(property, "property cannot be null");
         synchronized (LISTENER) {
@@ -131,18 +134,22 @@ public class FlowRuleManager {
         return true;
     }
 
+    //实现更新缓存的限流规则配置
     private static final class FlowPropertyListener implements PropertyListener<List<FlowRule>> {
 
+        //再更新规则配置时被调用，被调用的时机时SentinelProperty的updateValue方法被调用时
         @Override
         public void configUpdate(List<FlowRule> value) {
             Map<String, List<FlowRule>> rules = FlowRuleUtil.buildFlowRuleMap(value);
             if (rules != null) {
+                //先清空缓存，再写入
                 flowRules.clear();
                 flowRules.putAll(rules);
             }
             RecordLog.info("[FlowRuleManager] Flow rules received: " + flowRules);
         }
 
+        //再首次加载规则配置时被调用，是否被调用由SentinelProperty的实现类决定
         @Override
         public void configLoad(List<FlowRule> conf) {
             Map<String, List<FlowRule>> rules = FlowRuleUtil.buildFlowRuleMap(conf);

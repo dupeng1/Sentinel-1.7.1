@@ -28,7 +28,9 @@ import com.alibaba.csp.sentinel.property.SentinelProperty;
  */
 public abstract class AbstractDataSource<S, T> implements ReadableDataSource<S, T> {
 
+    //要求所有子类必须提供一个数据转换器，用于将S类型的实例转换为T类型的实例
     protected final Converter<S, T> parser;
+    //在构造方法中创建DynamicSentinelProperty实例，因此子类无需创建SentinelProperty实例
     protected final SentinelProperty<T> property;
 
     public AbstractDataSource(Converter<S, T> parser) {
@@ -41,10 +43,12 @@ public abstract class AbstractDataSource<S, T> implements ReadableDataSource<S, 
 
     @Override
     public T loadConfig() throws Exception {
+        //调用子类实现的readSource()方法从数据源中读取配置，返回的实例类型为S
         return loadConfig(readSource());
     }
 
     public T loadConfig(S conf) throws Exception {
+        //调用Converter实例的convert方法，将S类型的实例转换为T类型的实例
         T value = parser.convert(conf);
         return value;
     }

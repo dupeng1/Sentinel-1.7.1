@@ -41,6 +41,7 @@ public interface SentinelProperty<T> {
      *
      * @param listener listener to add.
      */
+    //添加监听器
     void addListener(PropertyListener<T> listener);
 
     /**
@@ -49,6 +50,7 @@ public interface SentinelProperty<T> {
      *
      * @param listener the listener to remove.
      */
+    //移除监听器
     void removeListener(PropertyListener<T> listener);
 
     /**
@@ -58,5 +60,6 @@ public interface SentinelProperty<T> {
      * @param newValue the new value.
      * @return true if the value in property has been updated, otherwise false
      */
+    //通知所有监听器配置已更新
     boolean updateValue(T newValue);
 }

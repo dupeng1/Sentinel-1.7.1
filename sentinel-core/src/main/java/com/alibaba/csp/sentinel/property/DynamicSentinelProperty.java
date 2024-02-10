@@ -22,7 +22,7 @@ import java.util.Set;
 import com.alibaba.csp.sentinel.log.RecordLog;
 
 public class DynamicSentinelProperty<T> implements SentinelProperty<T> {
-
+    //使用Set存储注册的监听器
     protected Set<PropertyListener<T>> listeners = Collections.synchronizedSet(new HashSet<PropertyListener<T>>());
     private T value = null;
 
@@ -45,6 +45,7 @@ public class DynamicSentinelProperty<T> implements SentinelProperty<T> {
         listeners.remove(listener);
     }
 
+    //通知所有监听器，调用监听器的configUpdate方法
     @Override
     public boolean updateValue(T newValue) {
         if (isEqual(value, newValue)) {
@@ -54,6 +55,7 @@ public class DynamicSentinelProperty<T> implements SentinelProperty<T> {
 
         value = newValue;
         for (PropertyListener<T> listener : listeners) {
+            //调用监听器的configUpdate方法
             listener.configUpdate(newValue);
         }
         return true;

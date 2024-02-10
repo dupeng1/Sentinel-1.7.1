@@ -38,21 +38,37 @@ import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
  * @author qinan.qn
  * @see NodeSelectorSlot
  */
+
+/**
+ * 1、统计同一资源、不同调用链入口的实时指标数据，是StatisticNode类的子类，其构造方法要求传入资源ID，表示该DefaultNode实例
+ * 用于统计该资源的实时指标数据。<br>
+ * 2、一个资源可能有多个DefaultNode实例，而是否有多个DefaultNode实例取决于该资源是否被多个不同入口节点的调用链包含。这样可
+ * 按不同调用链入口对资源采取不同的流量控制策略<br>
+ * ContextUtil.enter("myContextt");<br>
+ * entry = SphU.entry("demo", EntryType.IN);<br>
+ * doBusiness();<br>
+ * ContextUtil.exit();<br>
+ * doBusiness方法就是被Sentinel保护的资源，资源名称为demo，调用链入口名称为myContextt。
+ * 如果存在另一个入口名称为myContextt2的调用链也使用资源demo，那么Sentinel就会对同一个资源demo创建两个DefaultNode实例
+ */
 public class DefaultNode extends StatisticNode {
 
     /**
      * The resource associated with the node.
      */
+    //资源ID
     private ResourceWrapper id;
 
     /**
      * The list of all child nodes.
      */
+    //存放子节点和构造调用树
     private volatile Set<Node> childList = new HashSet<>();
 
     /**
      * Associated cluster node.
      */
+    //引用当前资源全局唯一的ClusterNode实例
     private ClusterNode clusterNode;
 
     public DefaultNode(ResourceWrapper id, ClusterNode clusterNode) {
@@ -139,6 +155,7 @@ public class DefaultNode extends StatisticNode {
     @Override
     public void addPassRequest(int count) {
         super.addPassRequest(count);
+        //调用被委托者（ClusterNode）的相同方法
         this.clusterNode.addPassRequest(count);
     }
 

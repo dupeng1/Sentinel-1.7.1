@@ -30,6 +30,11 @@ import com.alibaba.csp.sentinel.util.function.Predicate;
  * @author leyou
  * @author Eric Zhao
  */
+
+/**
+ * 定义统计资源实时指标数据的方法，可以对外屏蔽滑动窗口的存在
+ * Node接口的不同实现类被用在不同维度为资源统计实时的指标数据，如区分不同调用链、区分不同调用来源
+ */
 public interface Node extends OccupySupport, DebugSupport {
 
     /**
@@ -37,6 +42,7 @@ public interface Node extends OccupySupport, DebugSupport {
      *
      * @return total request count per minute
      */
+    //获取请求总数
     long totalRequest();
 
     /**
@@ -45,6 +51,7 @@ public interface Node extends OccupySupport, DebugSupport {
      * @return total passed request count per minute
      * @since 1.5.0
      */
+    //获取被放行的请求总数
     long totalPass();
 
     /**
@@ -52,6 +59,7 @@ public interface Node extends OccupySupport, DebugSupport {
      *
      * @return total completed request count per minute
      */
+    //获取响应成功的请求总数，即被放行且未出现异常的请求总数
     long totalSuccess();
 
     /**
@@ -59,6 +67,7 @@ public interface Node extends OccupySupport, DebugSupport {
      *
      * @return total blocked request count per minute
      */
+    //获取被拒绝的请求总数
     long blockRequest();
 
     /**
@@ -66,6 +75,7 @@ public interface Node extends OccupySupport, DebugSupport {
      *
      * @return total business exception count per minute
      */
+    //获取发生异常的请求总数
     long totalException();
 
     /**
@@ -73,6 +83,7 @@ public interface Node extends OccupySupport, DebugSupport {
      *
      * @return QPS of passed requests
      */
+    //获取当前时间窗口被放行的请求总数
     double passQps();
 
     /**
@@ -80,6 +91,7 @@ public interface Node extends OccupySupport, DebugSupport {
      *
      * @return QPS of blocked requests
      */
+    //获取当前时间窗口被拒绝的请求总数
     double blockQps();
 
     /**
@@ -87,6 +99,7 @@ public interface Node extends OccupySupport, DebugSupport {
      *
      * @return QPS of passed and blocked requests
      */
+    //获取当前时间窗口的请求总数
     double totalQps();
 
     /**
@@ -94,6 +107,7 @@ public interface Node extends OccupySupport, DebugSupport {
      *
      * @return QPS of completed requests
      */
+    //获取当前时间窗口响应成功的请求总数
     double successQps();
 
     /**
@@ -101,6 +115,8 @@ public interface Node extends OccupySupport, DebugSupport {
      *
      * @return max completed QPS
      */
+    //获取一段时间内最大的 successQps，例如，若秒级滑动窗口的数组大
+    //小的默认配置为 2，则获取数组中 successQps 值最大的一个
     double maxSuccessQps();
 
     /**
@@ -108,6 +124,7 @@ public interface Node extends OccupySupport, DebugSupport {
      *
      * @return QPS of exception occurs
      */
+    //获取当前时间窗口发生异常的请求总数
     double exceptionQps();
 
     /**
@@ -115,6 +132,7 @@ public interface Node extends OccupySupport, DebugSupport {
      *
      * @return average response time per second
      */
+    //获取平均耗时
     double avgRt();
 
     /**
@@ -122,6 +140,7 @@ public interface Node extends OccupySupport, DebugSupport {
      *
      * @return recorded minimal response time
      */
+    //获取最小耗时
     double minRt();
 
     /**
@@ -129,16 +148,19 @@ public interface Node extends OccupySupport, DebugSupport {
      *
      * @return current active thread count
      */
+    //获取当前并行占用的线程数
     int curThreadNum();
 
     /**
      * Get last second block QPS.
      */
+    //获取前一个时间窗口的 blockQps
     double previousBlockQps();
 
     /**
      * Last window QPS.
      */
+    //获取前一个时间窗口的 passQps
     double previousPassQps();
 
     /**
@@ -162,6 +184,7 @@ public interface Node extends OccupySupport, DebugSupport {
      *
      * @param count count to add pass
      */
+    //当前时间窗口被放行的请求总数+count
     void addPassRequest(int count);
 
     /**
@@ -170,6 +193,7 @@ public interface Node extends OccupySupport, DebugSupport {
      * @param rt      response time
      * @param success success count to add
      */
+    //当前时间窗口响应成功的请求总数+success 及总耗时+rt
     void addRtAndSuccess(long rt, int success);
 
     /**
@@ -177,6 +201,7 @@ public interface Node extends OccupySupport, DebugSupport {
      *
      * @param count count to add
      */
+    //当前时间窗口被拒绝的请求总数+1
     void increaseBlockQps(int count);
 
     /**
@@ -184,16 +209,19 @@ public interface Node extends OccupySupport, DebugSupport {
      *
      * @param count count to add
      */
+    //当前时间窗口发生异常的请求总数+1
     void increaseExceptionQps(int count);
 
     /**
      * Increase current thread count.
      */
+    //并行占用线程数+1
     void increaseThreadNum();
 
     /**
      * Decrease current thread count.
      */
+    //并行占用线程数-1
     void decreaseThreadNum();
 
     /**

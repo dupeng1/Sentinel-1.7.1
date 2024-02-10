@@ -37,18 +37,27 @@ import com.alibaba.csp.sentinel.slots.block.AbstractRule;
  * @author Carpenter Lee
  * @see SystemRuleManager
  */
+
+/**
+ * 系统自适应限流规则针对所有流量类型为IN的资源生效，因此不需要配置规则的资源名称
+ */
 public class SystemRule extends AbstractRule {
 
     /**
      * negative value means no threshold checking.
      */
+    //按系统负载限流的阈值，默认为-1，大于0才生效
     private double highestSystemLoad = -1;
     /**
      * cpu usage, between [0, 1]
      */
+    //按CPU使用率限流的阈值，默认为-1，大于等于0才生效
     private double highestCpuUsage = -1;
+    //按QPS限流的阈值，默认为-1，大于0才生效
     private double qps = -1;
+    //按平均响应耗时限流的阈值，默认为-1，大于0才生效
     private long avgRt = -1;
+    //按最大并行占用线程数限流的阈值，默认为-1，大于0才生效
     private long maxThread = -1;
 
     public double getQps() {

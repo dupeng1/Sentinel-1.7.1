@@ -26,6 +26,10 @@ import com.sun.management.OperatingSystemMXBean;
 /**
  * @author jialiang.linjl
  */
+
+/**
+ * 负责获取系统的平均负载和CPU使用率
+ */
 public class SystemStatusListener implements Runnable {
 
     volatile double currentLoad = -1;

@@ -72,6 +72,10 @@ import com.alibaba.csp.sentinel.slots.system.SystemRuleManager;
  * @author Eric Zhao
  * @see SphO
  */
+
+/**
+ * 代理CtSph
+ */
 public class SphU {
 
     private static final Object[] OBJECTS0 = new Object[0];
@@ -85,6 +89,7 @@ public class SphU {
      * @throws BlockException if the block criteria is met, eg. when any rule's threshold is exceeded.
      */
     public static Entry entry(String name) throws BlockException {
+        //Env.sph即CtSph实例
         return Env.sph.entry(name, EntryType.OUT, 1, OBJECTS0);
     }
 

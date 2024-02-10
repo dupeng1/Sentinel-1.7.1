@@ -25,8 +25,8 @@ import com.alibaba.csp.sentinel.slots.block.BlockException;
  * @since 0.2.0
  */
 public interface ProcessorSlotEntryCallback<T> {
-
+    //该方法在请求被放行时被回调执行
     void onPass(Context context, ResourceWrapper resourceWrapper, T param, int count, Object... args) throws Exception;
-
+    //该方法在请求被拒绝时被回调执行
     void onBlocked(BlockException ex, Context context, ResourceWrapper resourceWrapper, T param, int count, Object... args);
 }

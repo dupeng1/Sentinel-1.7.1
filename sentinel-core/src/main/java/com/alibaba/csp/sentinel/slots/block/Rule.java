@@ -34,6 +34,14 @@ public interface Rule {
      * @param args    arguments of the original invocation.
      * @return If current statistical indicators not exceeding any threshold return true, otherwise return false.
      */
+    /**
+     * 判断当前请求是否被允许通过
+     * @param context   当前调用链上下文
+     * @param node  当前资源的DefaultNode实例
+     * @param count 一般为1，用在令牌桶算法中表示需要申请的令牌数；用在QPS统计中表示一个请求；用在并行占用线程数统计中表示一个线程
+     * @param args  方法参数，用于实现热点参数限流降级
+     * @return
+     */
     boolean passCheck(Context context, DefaultNode node, int count, Object... args);
 
 }

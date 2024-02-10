@@ -25,10 +25,19 @@ import com.alibaba.csp.sentinel.slots.block.RuleConstant;
  *
  * @author youji.zj
  */
+
+/**
+ * 授权规则
+ */
 public class AuthorityRule extends AbstractRule {
 
     /**
      * Mode: 0 for whitelist; 1 for blacklist.
+     */
+    /**
+     * 限流策略，白名单或黑名单
+     * 1、当配置为白名单时，limitApp就是调用来源白名单
+     * 2、当配置为黑名单时，limitApp就是调用来源黑名单
      */
     private int strategy = RuleConstant.AUTHORITY_WHITE;
 

@@ -44,6 +44,13 @@ import com.alibaba.csp.sentinel.slotchain.StringResourceWrapper;
  *
  * @author jialiang.linjl
  */
+
+/**
+ * 1、为调用链上的资源创建ClusterNode实例，以及对于不同调用来源，为调用链上的资源都会创建一个StatisticNode实例
+ * 2、ClusterBuilderSlot在创建ClusterNode实例时，需要将ClusterNode实例赋值给DefaultNode实例的clusterNode字段，由DefaultNode实例
+ * 持有ClusterNode实例，并由DefaultNode负责代理ClusterNode完成资源指标数据统计
+ * 3、必须先有DefaultNode实例，才能将ClusterNode实例委托给DefaultNode实例，这就是ClusterBuilderSlot在NodeSelectorSlot之后的原因
+ */
 public class ClusterBuilderSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
     /**
@@ -64,16 +71,18 @@ public class ClusterBuilderSlot extends AbstractLinkedProcessorSlot<DefaultNode>
      * at the very beginning while concurrent map will hold the lock all the time.
      * </p>
      */
+    //缓存不同资源的全局唯一ClusterNode
     private static volatile Map<ResourceWrapper, ClusterNode> clusterNodeMap = new HashMap<>();
 
     private static final Object lock = new Object();
-
+    //非静态字段，持有当前资源的ClusterNode，省去每次都从clusterNodeMap静态字段中获取资源的ClusterNode实例的步骤
     private volatile ClusterNode clusterNode = null;
 
     @Override
     public void entry(Context context, ResourceWrapper resourceWrapper, DefaultNode node, int count,
                       boolean prioritized, Object... args)
         throws Throwable {
+        //如果clusterNode字段为空，说明当前资源首次被访问，那么需要为资源创建一个全局唯一的clusterNode实例
         if (clusterNode == null) {
             synchronized (lock) {
                 if (clusterNode == null) {
@@ -87,6 +96,7 @@ public class ClusterBuilderSlot extends AbstractLinkedProcessorSlot<DefaultNode>
                 }
             }
         }
+        //将ClusterNode实例委托给资源的DefaultNode实例来统计资源指标数据
         node.setClusterNode(clusterNode);
 
         /*
@@ -94,6 +104,7 @@ public class ClusterBuilderSlot extends AbstractLinkedProcessorSlot<DefaultNode>
          * the specific origin.
          */
         if (!"".equals(context.getOrigin())) {
+            //如果调用来源不空，那么为当前调用来源创建一个StatisticNode实例
             Node originNode = node.getClusterNode().getOrCreateOriginNode(context.getOrigin());
             context.getCurEntry().setOriginNode(originNode);
         }

@@ -136,6 +136,14 @@ import com.alibaba.csp.sentinel.util.function.Function;
  * @author jialiang.linjl
  * @author Eric Zhao
  */
+
+/**
+ * 实现 QPS/Threads 限流
+ * 1、作为实现限流功能入口，是否会拒绝请求将交由FlowRuleChecker判断
+ * 2、实现限流功能的入口，它作为ProcessorSlot被插入ProcessorSlotChain
+ * 3、在entry方法中调用Checker可以判断是否需要拒绝当前请求，若需要拒绝请求，则抛出BlockException
+ * 4、在构造方法中创建FlowRuleChecker实例，并在entry方法中调用FlowRuleChecker实例的checkFlow方法，判断是否需要拒绝当前请求
+ */
 public class FlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
     private final FlowRuleChecker checker;
@@ -163,6 +171,7 @@ public class FlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
         fireEntry(context, resourceWrapper, node, count, prioritized, args);
     }
 
+    //检查是否限流
     void checkFlow(ResourceWrapper resource, Context context, DefaultNode node, int count, boolean prioritized)
         throws BlockException {
         checker.checkFlow(ruleProvider, resource, context, node, count, prioritized);
@@ -173,6 +182,7 @@ public class FlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
         fireExit(context, resourceWrapper, count, args);
     }
 
+    //规则生产者，一个Function，参数资源名称
     private final Function<String, Collection<FlowRule>> ruleProvider = new Function<String, Collection<FlowRule>>() {
         @Override
         public Collection<FlowRule> apply(String resource) {

@@ -37,6 +37,10 @@ import com.alibaba.csp.sentinel.property.SentinelProperty;
  * @author jialiang.linjl
  * @author Eric Zhao
  */
+
+/**
+ * 授权规则管理者
+ */
 public final class AuthorityRuleManager {
 
     private static Map<String, Set<AuthorityRule>> authorityRules = new ConcurrentHashMap<>();

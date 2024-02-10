@@ -114,6 +114,7 @@ public class Tracer {
         traceExceptionToNode(e, count, entry, curNode);
     }
 
+    //Trace#trace方法最终会调用Trace#traceExceptionToNode方法
     private static void traceExceptionToNode(Throwable t, int count, Entry entry, DefaultNode curNode) {
         if (curNode == null) {
             return;
@@ -123,10 +124,12 @@ public class Tracer {
         }
 
         // clusterNode can be null when Constants.ON is false.
+        //获取当前资源的ClusterNode
         ClusterNode clusterNode = curNode.getClusterNode();
         if (clusterNode == null) {
             return;
         }
+        //调用ClusterNode#trace方法统计异常指标
         clusterNode.trace(t, count);
     }
 

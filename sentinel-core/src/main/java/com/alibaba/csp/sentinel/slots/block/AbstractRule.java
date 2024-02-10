@@ -21,11 +21,16 @@ package com.alibaba.csp.sentinel.slots.block;
  * @author youji.zj
  * @author Eric Zhao
  */
+
+/**
+ * 规则是围绕资源配置的，一个规则只对某个资源起作用
+ */
 public abstract class AbstractRule implements Rule {
 
     /**
      * Resource name.
      */
+    //资源名称，规则作用对象
     private String resource;
 
     /**
@@ -37,6 +42,7 @@ public abstract class AbstractRule implements Rule {
      * For authority rules, multiple origin name can be separated with comma (',').
      * </p>
      */
+    //只对哪个或哪些调用来源生效，若为default，则不区分调用来源
     private String limitApp;
 
     public String getResource() {

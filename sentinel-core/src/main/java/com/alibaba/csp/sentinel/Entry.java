@@ -48,17 +48,26 @@ import com.alibaba.csp.sentinel.context.Context;
  * @see Context
  * @see ContextUtil
  */
+
+/**
+ * 1、在调用链上，一个资源对应一个Entry实例<br>
+ * 2、可以从Context中获取调用链上当前访问到的资源DefaultNode实例，Context实例的curEntry字段引用当前资源的DefaultNode实例，
+ * 3、以及资源相对当前调用来源的StatisticNode实例
+ */
 public abstract class Entry implements AutoCloseable {
 
     private static final Object[] OBJECTS0 = new Object[0];
 
     private long createTime;
+    //当前资源的 DefaultNode 实例
     private Node curNode;
     /**
      * {@link Node} of the specific origin, Usually the origin is the Service Consumer.
      */
+    //当前资源、当前调用来源的 StatisticNode 实例
     private Node originNode;
     private Throwable error;
+    //资源 ID
     protected ResourceWrapper resourceWrapper;
 
     public Entry(ResourceWrapper resourceWrapper) {

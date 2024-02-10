@@ -109,6 +109,17 @@ public class ContextUtil {
      *               invoker/consumer separately.
      * @return The invocation context of the current thread
      */
+    /**
+     *
+     * 1、负责在调用链入口创建Context实例
+     * 2、以及为调用链创建入口节点，即EntranceNode实例
+     * ContextUtil#enter方法与ContextUtil#exit方法并不是必须调用的，当不需要为资源区分不同调用链入口的配置限流规则时可以被省略，但Context
+     * 实例时调用链上方法执行所依赖的环境，因此，在默认情况下，Sentinel会自动创建一个调用链入口名称为sentinel_default_context
+     * 的Context实例，同时会创建一个调用链入口名称为sentinel_default_context的入口节点
+     * @param name
+     * @param origin
+     * @return
+     */
     public static Context enter(String name, String origin) {
         if (Constants.CONTEXT_DEFAULT_NAME.equals(name)) {
             throw new ContextNameDefineException(
@@ -118,8 +129,10 @@ public class ContextUtil {
     }
 
     protected static Context trueEnter(String name, String origin) {
+        //使用ThreadLocal存储Context，若当前调用链上已经存在Context，则使用已经存在的Context，否则创建Context
         Context context = contextHolder.get();
         if (context == null) {
+            //尝试从缓存中获取已经存在的入口节点
             Map<String, DefaultNode> localCacheNameMap = contextNameNodeMap;
             DefaultNode node = localCacheNameMap.get(name);
             if (node == null) {
@@ -135,8 +148,11 @@ public class ContextUtil {
                                 setNullContext();
                                 return NULL_CONTEXT;
                             } else {
+                                //若不存在入口节点，则创建入口节点，入口节点的名称与Context名称相同，入口节点是一个调用链入口，只能被创建一个
+                                //，并且作为调用树根节点（ROOT）的子节点
                                 node = new EntranceNode(new StringResourceWrapper(name, EntryType.IN), null);
                                 // Add entrance node.
+                                //将入口节点添加到调用树的ROOT节点的子节点中
                                 Constants.ROOT.addChild(node);
 
                                 Map<String, DefaultNode> newMap = new HashMap<>(contextNameNodeMap.size() + 1);
@@ -200,6 +216,7 @@ public class ContextUtil {
     public static void exit() {
         Context context = contextHolder.get();
         if (context != null && context.getCurEntry() == null) {
+            //如果Context实例的curEntry字段值为空，则说明所有SphU#entry方法创建的Entry实例都执行了一次exit方法，此时就可以将Context实例移除
             contextHolder.set(null);
         }
     }

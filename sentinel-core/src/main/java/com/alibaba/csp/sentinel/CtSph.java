@@ -40,6 +40,13 @@ import com.alibaba.csp.sentinel.slots.block.Rule;
  * @author Eric Zhao
  * @see Sph
  */
+
+/**
+ * 1、为资源创建ResourceWrapper对象、
+ * 2、并为资源构造一个全局唯一的ProcessorSlotChain
+ * 3、为资源创建CtEntry并将CtEntry赋值给当前调用链上下文的curEntry字段
+ * 4、调用ProcessorSlotChain#entry方法完成一次ProcessorSlot单向链表的entry方法调用
+ */
 public class CtSph implements Sph {
 
     private static final Object[] OBJECTS0 = new Object[0];
@@ -48,6 +55,7 @@ public class CtSph implements Sph {
      * Same resource({@link ResourceWrapper#equals(Object)}) will share the same
      * {@link ProcessorSlotChain}, no matter in which {@link Context}.
      */
+    //缓存ProcessorSlotChain实例，key为资源ID，value为ProcessorSlotChain实例
     private static volatile Map<ResourceWrapper, ProcessorSlotChain> chainMap
         = new HashMap<ResourceWrapper, ProcessorSlotChain>();
 
@@ -114,6 +122,17 @@ public class CtSph implements Sph {
         return asyncEntryWithPriorityInternal(resourceWrapper, count, false, args);
     }
 
+    /**
+     * 1、为资源创建ProcessorSlotChain实例（如果未创建）
+     * 2、为资源创建Entry实例
+     * 3、以及调用ProcessorSlotChain实例的entry方法
+     * @param resourceWrapper
+     * @param count
+     * @param prioritized
+     * @param args
+     * @return
+     * @throws BlockException
+     */
     private Entry entryWithPriority(ResourceWrapper resourceWrapper, int count, boolean prioritized, Object... args)
         throws BlockException {
         Context context = ContextUtil.getContext();

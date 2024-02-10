@@ -21,8 +21,15 @@ import com.alibaba.csp.sentinel.context.Context;
  * @author qinan.qn
  * @author jialiang.linjl
  */
+
+/**
+ * 实现责任链调用：由前一个 AbstractLinkedProcessorSlot实例调用fireEntry方法或fireExit方法，
+ * 在 fireEntry方法与fireExit方法中调用下一个 AbstractLinkedProcessorSlot实例（next）的 entry方法或 exit方法
+ * @param <T>
+ */
 public abstract class AbstractLinkedProcessorSlot<T> implements ProcessorSlot<T> {
 
+    //表示链表中当前节点的下一个节点
     private AbstractLinkedProcessorSlot<?> next = null;
 
     @Override

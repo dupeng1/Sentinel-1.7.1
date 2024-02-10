@@ -38,12 +38,18 @@ import com.alibaba.csp.sentinel.util.TimeUtil;
  * @author Eric Zhao
  * @author Carpenter Lee
  */
+
+/**
+ * 1、当前时间戳是1577017699235，Bucket时间窗口大小是1秒，将时间戳的毫秒部分全部替换为0，就能得到Bucket的时间窗口的开始时间戳为1577017699000
+ * @param <T>
+ */
 public abstract class LeapArray<T> {
 
+    //Bucket【时间窗口】大小，例如1000代表1s
     protected int windowLengthInMs;
     protected int sampleCount;
     protected int intervalInMs;
-
+    //当前【滑动窗口】Bucket数组，例如滑动窗口是1分钟，则Bucket数组存储8点29分开始每一秒【时间窗口】
     protected final AtomicReferenceArray<WindowWrap<T>> array;
 
     /**
@@ -95,12 +101,15 @@ public abstract class LeapArray<T> {
      */
     protected abstract WindowWrap<T> resetWindowTo(WindowWrap<T> windowWrap, long startTime);
 
+
+    //定位当前时间戳对应的Bucket在滑动窗口的Bucket数组中的位置
     private int calculateTimeIdx(/*@Valid*/ long timeMillis) {
         long timeId = timeMillis / windowLengthInMs;
         // Calculate current index so we can map the timestamp to the leap array.
         return (int)(timeId % array.length());
     }
 
+    //计算Bucket的时间窗口的开始时间戳
     protected long calculateWindowStart(/*@Valid*/ long timeMillis) {
         return timeMillis - timeMillis % windowLengthInMs;
     }
@@ -111,13 +120,15 @@ public abstract class LeapArray<T> {
      * @param timeMillis a valid timestamp in milliseconds
      * @return current bucket item at provided timestamp if the time is valid; null if time is invalid
      */
+    //根据当前时间戳定位Bucket的算法
     public WindowWrap<T> currentWindow(long timeMillis) {
         if (timeMillis < 0) {
             return null;
         }
-
+        //通过当前时间戳计算出当前【时间窗口】的Bucket在数据中的索引
         int idx = calculateTimeIdx(timeMillis);
         // Calculate current bucket start time.
+        //计算Bucket的时间窗口的开始时间戳
         long windowStart = calculateWindowStart(timeMillis);
 
         /*
@@ -127,8 +138,11 @@ public abstract class LeapArray<T> {
          * (2) Bucket is up-to-date, then just return the bucket.
          * (3) Bucket is deprecated, then reset current bucket and clean all deprecated buckets.
          */
+        //从数组中获取Bucket
         while (true) {
+            //从数组中获取Bucket（Old Bucket）
             WindowWrap<T> old = array.get(idx);
+            //一般时项目启动时或久未有请求时，或者数组还没有存储满，没有到复用阶段时
             if (old == null) {
                 /*
                  *     B0       B1      B2    NULL      B4
@@ -142,7 +156,9 @@ public abstract class LeapArray<T> {
                  * then try to update circular array via a CAS operation. Only one thread can
                  * succeed to update, while other threads yield its time slice.
                  */
+                //创建新的Bucket，并创建一个Bucket包装器
                 WindowWrap<T> window = new WindowWrap<T>(windowLengthInMs, windowStart, newEmptyBucket(timeMillis));
+                //CAS写入，确保线程安全
                 if (array.compareAndSet(idx, null, window)) {
                     // Successfully updated, return the created bucket.
                     return window;
@@ -151,6 +167,8 @@ public abstract class LeapArray<T> {
                     Thread.yield();
                 }
             } else if (windowStart == old.windowStart()) {
+                //当Old Bucket不为空，且Old Bucket的【时间窗口】的开始时间戳与当前计算得到的New Bucket的【时间窗口】的开始时间戳相等时，该
+                //Bucket就是当前要找的Bucket，将此Bucket直接返回
                 /*
                  *     B0       B1      B2     B3      B4
                  * ||_______|_______|_______|_______|_______||___
@@ -164,6 +182,8 @@ public abstract class LeapArray<T> {
                  */
                 return old;
             } else if (windowStart > old.windowStart()) {
+                //当计算出New Bucket的时间窗口的开始时间戳大于当前数组中的idx处存储的Old Bucket的时间窗口的开始时间戳时，可以复用
+                //这个Old Bucket，确保线程能够安全地重置Bucket，并返回Bucket
                 /*
                  *   (old)
                  *             B0       B1      B2    NULL      B4
@@ -193,6 +213,8 @@ public abstract class LeapArray<T> {
                     Thread.yield();
                 }
             } else if (windowStart < old.windowStart()) {
+                //当计算出New Bucket的时间窗口的开始时间戳小于当前数组中的idx处存储的Old Bucket的时间窗口的开始时间戳时，
+                //直接返回一个空的Bucket，因为时间不会倒退
                 // Should not go through here, as the provided time is already behind.
                 return new WindowWrap<T>(windowLengthInMs, windowStart, newEmptyBucket(timeMillis));
             }
@@ -204,6 +226,13 @@ public abstract class LeapArray<T> {
      *
      * @param timeMillis a valid timestamp in milliseconds
      * @return the previous bucket item before provided timestamp
+     */
+    /**
+     * 获取当前时间戳的前一个Bucket
+     * 1、根据当前时间戳计算出当前Bucket的【时间窗口】的开始时间戳
+     * 2、使用当前Bucket的【时间窗口】的开始时间戳减去Bucket的时间窗口大小就能定位出前一个Bucket
+     * @param timeMillis
+     * @return
      */
     public WindowWrap<T> getPreviousWindow(long timeMillis) {
         if (timeMillis < 0) {

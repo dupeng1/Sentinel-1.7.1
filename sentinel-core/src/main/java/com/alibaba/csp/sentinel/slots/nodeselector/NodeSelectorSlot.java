@@ -122,10 +122,25 @@ import java.util.Map;
  * @see EntranceNode
  * @see ContextUtil
  */
+
+/**
+ * 1、负责为资源的首次访问创建DefaultNode实例
+ * 2、修改Context实例的curNode字段指向当前资源的DefaultNode实例，
+ * 将DefaultNode实例绑定到调用树上，因为后续的ProcessorSlot在逻辑上要依赖这个ProcessorSlot
+ * 3、为调用链上的资源创建DefaultNode实例，相同调用链上的每个资源仅会创建一个DefaultNode实例，
+ * 不同调用链上的每个资源都会生成一个DefaultNode
+ */
 public class NodeSelectorSlot extends AbstractLinkedProcessorSlot<Object> {
 
     /**
      * {@link DefaultNode}s of the same resource in different context.
+     */
+    /**
+     * 1、Sentinel只会为一个资源创建一个ProcessorSlotChain，一个ProcessorSlotChain又只会创建一个NodeSelectorSlot
+     * 2、map字段缓存DefaultNode使用的key并非资源ID，而是调用链入口名称，所以map字段的作用时缓存同一资源、不同调用链入口创建的DefaultNode实例
+     * 3、相同的资源但是Context不同，分别新建 DefaultNode，并以ContextName为key
+     * 4、例如同一支付接口，既可以使用Spring MVC暴露给前端访问，也可以使用Dubbo暴露给其他内部服务使用，由于入口节点不同，支付接口会被两条
+     * 调用链包含，针对这种情况，我们可以通过设置来限制从Spring MVC进来的流量，也就是对前端请求限流
      */
     private volatile Map<String, DefaultNode> map = new HashMap<String, DefaultNode>(10);
 
@@ -150,24 +165,29 @@ public class NodeSelectorSlot extends AbstractLinkedProcessorSlot<Object> {
          * The answer is all {@link DefaultNode}s with same resource name share one
          * {@link ClusterNode}. See {@link ClusterBuilderSlot} for detail.
          */
+        // 根据ContextName尝试获取DefaultNode
         DefaultNode node = map.get(context.getName());
         if (node == null) {
             synchronized (this) {
+                //如果在不同Context使用相同资源，使用Context名称作为key可以区分相同资源
                 node = map.get(context.getName());
                 if (node == null) {
+                    // 初始化DefaultNode，每个Context对应一个
                     node = new DefaultNode(resourceWrapper, null);
                     HashMap<String, DefaultNode> cacheMap = new HashMap<String, DefaultNode>(map.size());
                     cacheMap.putAll(map);
                     cacheMap.put(context.getName(), node);
                     map = cacheMap;
                     // Build invocation tree
+                    // 将当前资源的DefaultNode实例绑定到调用树上
                     ((DefaultNode) context.getLastNode()).addChild(node);
                 }
 
             }
         }
-
+        //替换Context实例的curNode为当前创建的DefaultNode实例
         context.setCurNode(node);
+        // 唤醒执行下一个插槽
         fireEntry(context, resourceWrapper, node, count, prioritized, args);
     }
 

@@ -18,22 +18,32 @@ package com.alibaba.csp.sentinel.slots.statistic;
 /**
  * @author Eric Zhao
  */
+
+/**
+ * 定义了Sentinel会收集的指标数据
+ */
 public enum MetricEvent {
 
     /**
      * Normal pass.
      */
+    //pass指标：请求被放行的总数
     PASS,
     /**
      * Normal block.
      */
+    //block指标：请求被拒绝的总数
     BLOCK,
+    //exception指标：异常的请求总数
     EXCEPTION,
+    //success指标：被成功处理的请求总数
     SUCCESS,
+    //rt指标：被成功处理的请求的总耗时
     RT,
 
     /**
      * Passed in future quota (pre-occupied, since 1.5.0).
      */
+    //occupied_pass指标：预通过总数
     OCCUPIED_PASS
 }

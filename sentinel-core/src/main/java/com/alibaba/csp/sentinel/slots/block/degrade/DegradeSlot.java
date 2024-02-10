@@ -26,6 +26,12 @@ import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
  *
  * @author leyou
  */
+
+/**
+ * 实现熔断降级
+ * 1、Sentinel支持对同一资源配置多个相同类型或不同类型的限流规则，在配置了限流规则的基础上，还可以为同一资源配置熔断降级规则，
+ * 在接口的QPS未达到限流阈值却已经有很多请求超时的情况下，就可能达到熔断降级规则配置的阈值，从而触发熔断，这就很好地保护服务自身
+ */
 public class DegradeSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
     @Override

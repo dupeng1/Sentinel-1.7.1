@@ -43,11 +43,18 @@ public final class RuleConstant {
     public static final int AUTHORITY_BLACK = 1;
 
     public static final int STRATEGY_DIRECT = 0;
+    /**
+     * 当两个资源之间具有资源争抢关系的时候，使用STRATEGY_RELATE调用关系限流策略可以避免多个资源之间过度地争抢同一资源，
+     * 例如查询订单信息和用户下单这两个操作分别需要读和写数据库订单表的资源，我们可以给执行读表操作的资源设置限流规则以实现
+     * 写有限的目的，查询订单信息的资源会根据用户下单的实时指标数据限流，当写表操作过于频繁时，读表操作的请求就会被限流
+     */
     public static final int STRATEGY_RELATE = 1;
     public static final int STRATEGY_CHAIN = 2;
 
+    //默认限流效果控制器
     public static final int CONTROL_BEHAVIOR_DEFAULT = 0;
     public static final int CONTROL_BEHAVIOR_WARM_UP = 1;
+    //匀速限流效果控制器
     public static final int CONTROL_BEHAVIOR_RATE_LIMITER = 2;
     public static final int CONTROL_BEHAVIOR_WARM_UP_RATE_LIMITER = 3;
 

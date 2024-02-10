@@ -32,6 +32,11 @@ import java.lang.reflect.Method;
  *
  * @author Eric Zhao
  */
+
+/**
+ * Sentinel中的核心切面，在SentinelAutoConfiguration被加载时，注入了一个SentinelResourceAspect的Bean对象，
+ * aspect的@around拦截标注有@SentinelResource的注解
+ */
 @Aspect
 public class SentinelResourceAspect extends AbstractSentinelAspectSupport {
 
@@ -42,17 +47,19 @@ public class SentinelResourceAspect extends AbstractSentinelAspectSupport {
     @Around("sentinelResourceAnnotationPointcut()")
     public Object invokeResourceWithSentinel(ProceedingJoinPoint pjp) throws Throwable {
         Method originMethod = resolveMethod(pjp);
-
+        //1、获取@SentinelResource注解
         SentinelResource annotation = originMethod.getAnnotation(SentinelResource.class);
         if (annotation == null) {
             // Should not go through here.
             throw new IllegalStateException("Wrong state for SentinelResource annotation");
         }
+        //2、获取@SentinelResource中的资源名
         String resourceName = getResourceName(annotation.value(), originMethod);
         EntryType entryType = annotation.entryType();
         int resourceType = annotation.resourceType();
         Entry entry = null;
         try {
+            //3、执行Sentinel核心功能
             entry = SphU.entry(resourceName, resourceType, entryType, pjp.getArgs());
             Object result = pjp.proceed();
             return result;

@@ -30,6 +30,10 @@ import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
  * @author leyou
  * @author Eric Zhao
  */
+
+/**
+ * 实现黑白名单授权功能的处理器插槽，被放在SystemSlot、FlowSlot 和 DegradeSlot 的前面，优先级最高
+ */
 public class AuthoritySlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
     @Override
@@ -45,17 +49,18 @@ public class AuthoritySlot extends AbstractLinkedProcessorSlot<DefaultNode> {
     }
 
     void checkBlackWhiteAuthority(ResourceWrapper resource, Context context) throws AuthorityException {
+        //1、从AuthorityRuleManager中获取当前配置的所有授权规则
         Map<String, Set<AuthorityRule>> authorityRules = AuthorityRuleManager.getAuthorityRules();
 
         if (authorityRules == null) {
             return;
         }
-
+        //2、获取为当前资源配置的所有授权规则
         Set<AuthorityRule> rules = authorityRules.get(resource.getName());
         if (rules == null) {
             return;
         }
-
+        //3、遍历授权规则
         for (AuthorityRule rule : rules) {
             if (!AuthorityRuleChecker.passCheck(rule, context)) {
                 throw new AuthorityException(context.getOrigin(), rule);

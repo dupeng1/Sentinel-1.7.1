@@ -54,26 +54,39 @@ import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
  * @see ContextUtil
  * @see NodeSelectorSlot
  */
+
+/**
+ * 调用链上下文，贯穿整条调用链，在响应式编程项目中，Context隐藏在订阅过程中传递，
+ * 而在非响应式编程项目中，Context可通过ThreadLocal在调用链上传递<br>
+ * Context维持着入口节点（entranceNode）、调用链上当前资源的Entry实例（curEntry）及调用来源（origin）等信息<br>
+ * 调用链上Context实例的创建时机为调用链上ContextUtil类的enter方法被首次调用时<br>
+ * 例如A调用B，B调用C，当服务B收到服务A的请求时，会创建一个入口名称为 sentinel_spring_web_context的Context实例，
+ * 当服务B在向服务C发起接口调用时，由于调用链上已经存在一个Context实例，因此不会创建新的Context实例
+ */
 public class Context {
 
     /**
      * Context name.
      */
+    //调用链的入口名称
     private final String name;
 
     /**
      * The entrance node of current invocation tree.
      */
+    //调用链的入口节点，类型为 EntranceNode
     private DefaultNode entranceNode;
 
     /**
      * Current processing entry.
      */
+    //调用链上当前资源的 Entry 实例，类型为 CtEntry
     private Entry curEntry;
 
     /**
      * The origin of this context (usually indicate different invokers, e.g. service consumer name or origin IP).
      */
+    //调用来源，即服务消费者的名称或服务消费者的 IP，由服务消费者传递过来
     private String origin = "";
 
     private final boolean async;

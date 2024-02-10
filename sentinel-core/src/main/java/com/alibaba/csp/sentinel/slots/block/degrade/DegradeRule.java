@@ -68,16 +68,19 @@ public class DegradeRule extends AbstractRule {
     /**
      * RT threshold or exception ratio threshold count.
      */
+    //限流阈值，策略不同，代表不同阈值，如慢请求总数阈值、异常比率阈值、常总数阈值
     private double count;
 
     /**
      * Degrade recover timeout (in seconds) when degradation occurs.
      */
+    //重置熔断的窗口时间，默认值为0
     private int timeWindow;
 
     /**
      * Degrade strategy (0: average RT, 1: exception ratio, 2: exception count).
      */
+    //熔断降级策略，支持按平均响应耗时、按失败比率、按失败次数
     private int grade = RuleConstant.DEGRADE_GRADE_RT;
 
     /**
@@ -85,6 +88,8 @@ public class DegradeRule extends AbstractRule {
      *
      * @since 1.7.0
      */
+    //当熔断降级策略被配置为按平均响应耗时，该值表示触发熔断超过限流阈值的慢请求数量
+    //当有连续rtSlowRequestAmount个请求的计算平均响应耗时都超过count时，后面的请求才会被熔断，且在下个时间窗口恢复
     private int rtSlowRequestAmount = RuleConstant.DEGRADE_DEFAULT_SLOW_REQUEST_AMOUNT;
 
     /**
@@ -92,6 +97,8 @@ public class DegradeRule extends AbstractRule {
      *
      * @since 1.7.0
      */
+    //当熔断降级策略被配置为按失败比率，该值表示触发熔断的最小请求数
+    //在第一个请求就失败的情况下，失败率为100%，而minRequestAmount可以避免这种情况的出现
     private int minRequestAmount = RuleConstant.DEGRADE_DEFAULT_MIN_REQUEST_AMOUNT;
 
     public int getGrade() {
@@ -178,7 +185,9 @@ public class DegradeRule extends AbstractRule {
 
     // Internal implementation (will be deprecated and moved outside).
 
+    //当熔断降级策略被配置为按平均响应耗时，用于累加慢请求数
     private AtomicLong passCount = new AtomicLong(0);
+    //用于记录当前是否已经触发熔断
     private final AtomicBoolean cut = new AtomicBoolean(false);
 
     @Override
@@ -186,12 +195,13 @@ public class DegradeRule extends AbstractRule {
         if (cut.get()) {
             return false;
         }
-
+        //1、根据资源名称获取统计该资源全局指标数据的ClusterNode
         ClusterNode clusterNode = ClusterBuilderSlot.getClusterNode(this.getResource());
         if (clusterNode == null) {
             return true;
         }
-
+        //2、如果熔断降级策略为DEGRADE_GRADE_RT，则从ClusterNode实例中读取当前平均响应耗时，如果平均响应耗时小于阈值，则将慢请求计数器passCount
+        //重置为0，放行请求；若平均响应耗时超过阈值，并且超过阈值的慢请求数累计值已经大于rtSlowRequestAmount的值，则熔断当前请求
         if (grade == RuleConstant.DEGRADE_GRADE_RT) {
             double rt = clusterNode.avgRt();
             if (rt < this.count) {
@@ -203,11 +213,16 @@ public class DegradeRule extends AbstractRule {
             if (passCount.incrementAndGet() < rtSlowRequestAmount) {
                 return true;
             }
-        } else if (grade == RuleConstant.DEGRADE_GRADE_EXCEPTION_RATIO) {
+        }
+        //3、如果熔断降级策略为DEGRADE_GRADE_EXCEPTION_RATIO，则从ClusterNode实例中读取当前时间窗口的异常总数、成功总数、总请求数，
+        //若异常总数和成功总数的比值小于熔断降级规则配置的阈值则放行请求；若异常总数与成功总数的比值大于或等于阈值，并且当前总请求数大于
+        //minRequestAmount，则熔断当前请求
+        else if (grade == RuleConstant.DEGRADE_GRADE_EXCEPTION_RATIO) {
             double exception = clusterNode.exceptionQps();
             double success = clusterNode.successQps();
             double total = clusterNode.totalQps();
             // If total amount is less than minRequestAmount, the request will pass.
+            //总请求数小于minRequestAmount直接放行当前请求
             if (total < minRequestAmount) {
                 return true;
             }
@@ -222,18 +237,22 @@ public class DegradeRule extends AbstractRule {
             if (exception / success < count) {
                 return true;
             }
-        } else if (grade == RuleConstant.DEGRADE_GRADE_EXCEPTION_COUNT) {
+        }
+        //4、如果熔断降级策略为DEGRADE_GRADE_EXCEPTION_COUNT，读取当前滑动窗口的异常总数，如果异常总数小于熔断降级规则配置的阈值，则放行请求
+        //由于统计时间窗口时分钟级别的，若timeWindow小于60s，则结束熔断状态后仍可能再次进入熔断状态，因为调用ClusterNode实例的totalException
+        //方法获取的是1分钟内的异常总数
+        else if (grade == RuleConstant.DEGRADE_GRADE_EXCEPTION_COUNT) {
             double exception = clusterNode.totalException();
             if (exception < count) {
                 return true;
             }
         }
-
+        //5、更改熔断标志为true，使后续请求不需要重复判断，并且开启定时任务，用于重置熔断标志，在休眠timeWindow时长后重置熔断标志
         if (cut.compareAndSet(false, true)) {
             ResetTask resetTask = new ResetTask(this);
             pool.schedule(resetTask, timeWindow, TimeUnit.SECONDS);
         }
-
+        //熔断
         return false;
     }
 

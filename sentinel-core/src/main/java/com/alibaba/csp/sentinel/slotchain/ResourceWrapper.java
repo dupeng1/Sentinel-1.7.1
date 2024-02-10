@@ -25,11 +25,16 @@ import com.alibaba.csp.sentinel.util.AssertUtil;
  * @author jialiang.linjl
  * @author Eric Zhao
  */
+
+/**
+ * 资源，额外记录资源类型和流量类型
+ */
 public abstract class ResourceWrapper {
-
+    //资源名称
     protected final String name;
-
+    //流量类型，流入流量或流出流量
     protected final EntryType entryType;
+    //资源类型，如Dubbo RPC、WebMvc 或 API Gateway
     protected final int resourceType;
 
     public ResourceWrapper(String name, EntryType entryType, int resourceType) {

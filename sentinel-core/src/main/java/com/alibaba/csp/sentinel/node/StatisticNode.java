@@ -87,12 +87,20 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author qinan.qn
  * @author jialiang.linjl
  */
+
+/**
+ * 实时指标数据统计，分钟级滑动窗口及秒级滑动窗口统计的指标数据分别有不同的用途，
+ * 当需要获取前一秒被拒绝的请求总数时，需要从分钟级滑动窗口获取，
+ * 当需要获取当前一秒内已经被拒绝的请求总数时，需要从秒级滑动窗口中获取，
+ * 当需要获取当前一秒内的最小耗时时，需要从秒级窗口中获取
+ */
 public class StatisticNode implements Node {
 
     /**
      * Holds statistics of the recent {@code INTERVAL} seconds. The {@code INTERVAL} is divided into time spans
      * by given {@code sampleCount}.
      */
+    //秒级滑动窗口，用于统计实时指标数据
     private transient volatile Metric rollingCounterInSecond = new ArrayMetric(SampleCountProperty.SAMPLE_COUNT,
         IntervalProperty.INTERVAL);
 
@@ -100,10 +108,15 @@ public class StatisticNode implements Node {
      * Holds statistics of the recent 60 seconds. The windowLengthInMs is deliberately set to 1000 milliseconds,
      * meaning each bucket per second, in this way we can get accurate statistics of each second.
      */
+    //分钟级滑动窗口，用于保存最近一分钟内的历史指标数据
     private transient Metric rollingCounterInMinute = new ArrayMetric(60, 60 * 1000, false);
 
     /**
      * The counter for thread count.
+     */
+    /**
+     * 并行占用线程计数器，用于统计实时占用的线程数，除响应式编程外，每处理一个请求需要占用一个线程，那么可以在处理请求之前将curThreadNum
+     * 自增1，在处理完请求后将curThreadNum自减1，当同时处理N个请求时。curThreadNum的值就为N
      */
     private LongAdder curThreadNum = new LongAdder();
 
@@ -250,9 +263,10 @@ public class StatisticNode implements Node {
 
     @Override
     public void addRtAndSuccess(long rt, int successCount) {
+        // 秒级滑动窗口
         rollingCounterInSecond.addSuccess(successCount);
         rollingCounterInSecond.addRT(rt);
-
+        // 分钟级滑动窗口
         rollingCounterInMinute.addSuccess(successCount);
         rollingCounterInMinute.addRT(rt);
     }

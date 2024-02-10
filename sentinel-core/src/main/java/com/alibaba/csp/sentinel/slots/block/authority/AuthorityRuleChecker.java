@@ -25,24 +25,33 @@ import com.alibaba.csp.sentinel.util.StringUtil;
  * @author Eric Zhao
  * @since 0.2.0
  */
+
+/**
+ * 授权检查类，负责实现黑白名单的过滤逻辑
+ */
 final class AuthorityRuleChecker {
 
     static boolean passCheck(AuthorityRule rule, Context context) {
+        //获取调用来源
         String requester = context.getOrigin();
 
         // Empty origin or empty limitApp will pass.
+        //若调用来源为空或规则没有配置黑白名单，则放行请求
         if (StringUtil.isEmpty(requester) || StringUtil.isEmpty(rule.getLimitApp())) {
             return true;
         }
 
         // Do exact match with origin name.
+        //查找字符串，这一步具有快速过滤的作用，可以提升性能
         int pos = rule.getLimitApp().indexOf(requester);
         boolean contain = pos > -1;
-
+        //若存在，则精确匹配
         if (contain) {
             boolean exactlyMatch = false;
+            //分割数组
             String[] appArray = rule.getLimitApp().split(",");
             for (String app : appArray) {
+                //将标志设置为true
                 if (requester.equals(app)) {
                     exactlyMatch = true;
                     break;
@@ -51,12 +60,13 @@ final class AuthorityRuleChecker {
 
             contain = exactlyMatch;
         }
-
+        //策略
         int strategy = rule.getStrategy();
+        //如果是黑名单，且调用来源在规则配置的黑名单中
         if (strategy == RuleConstant.AUTHORITY_BLACK && contain) {
             return false;
         }
-
+        //如果是白名单，且调用来源不在规则配置的白名单中
         if (strategy == RuleConstant.AUTHORITY_WHITE && !contain) {
             return false;
         }

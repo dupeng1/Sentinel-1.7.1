@@ -42,9 +42,15 @@ import com.alibaba.csp.sentinel.util.AssertUtil;
  * @author qinan.qn
  * @author jialiang.linjl
  */
-public class ClusterNode extends StatisticNode {
 
+/**
+ * 统计每个资源的全局指标数据，以及针对不同调用来源，不区分调用链入口，也不区分调用来源，一个资源有且仅有一个ClusterNode实例，
+ * 是StatisticNode类的子类
+ */
+public class ClusterNode extends StatisticNode {
+    //资源名称
     private final String name;
+    //资源类型
     private final int resourceType;
 
     public ClusterNode(String name) {
@@ -64,6 +70,11 @@ public class ClusterNode extends StatisticNode {
      * So we didn't use concurrent map here, but a lock, as this lock only happens
      * at the very beginning while concurrent map will hold the lock all the time.
      * </p>
+     */
+    /**
+     * 1、key为调用来源，value为StatisticNode实例
+     * 2、如果上游服务调用当前服务的接口将origin字段传递过来，那么ClusterBuilderSlot就会为ClusterNode实例创建一个
+     *  StatisticNode实例，用来统计当前资源被远程服务调用的指标数据
      */
     private Map<String, StatisticNode> originCountMap = new HashMap<>();
 
@@ -134,6 +145,7 @@ public class ClusterNode extends StatisticNode {
             return;
         }
         if (!BlockException.isBlockException(throwable)) {
+            //如果是非BlockException异常，则自增异常总数，一般情况下count值为1
             this.increaseExceptionQps(count);
         }
     }

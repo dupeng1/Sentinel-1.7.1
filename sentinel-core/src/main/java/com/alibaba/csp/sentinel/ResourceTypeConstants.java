@@ -19,12 +19,20 @@ package com.alibaba.csp.sentinel;
  * @author Eric Zhao
  * @since 1.7.0
  */
-public final class ResourceTypeConstants {
 
+/**
+ * 资源类型
+ */
+public final class ResourceTypeConstants {
+    //默认，可以是接口、一个方法、一段代码
     public static final int COMMON = 0;
+    //Web 应用的接口
     public static final int COMMON_WEB = 1;
+    //使用 Dubbo 框架实现的 RPC 接口
     public static final int COMMON_RPC = 2;
+    //API Gateway 网关接口
     public static final int COMMON_API_GATEWAY = 3;
+    //数据库 SQL 操作
     public static final int COMMON_DB_SQL = 4;
 
     private ResourceTypeConstants() {}

@@ -71,12 +71,12 @@ public final class DegradeRuleManager {
 
     public static void checkDegrade(ResourceWrapper resource, Context context, DefaultNode node, int count)
         throws BlockException {
-
+        //1、获取为当前资源配置的所有熔断降级规则
         Set<DegradeRule> rules = degradeRules.get(resource.getName());
         if (rules == null) {
             return;
         }
-
+        //2、遍历熔断降级规则，只要有一个熔断降级规则达到阈值，就抛出DegradeException
         for (DegradeRule rule : rules) {
             if (!rule.passCheck(context, node, count)) {
                 throw new DegradeException(rule.getLimitApp(), rule);

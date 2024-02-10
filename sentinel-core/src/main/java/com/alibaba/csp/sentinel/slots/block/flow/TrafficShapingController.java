@@ -22,6 +22,13 @@ import com.alibaba.csp.sentinel.node.Node;
  *
  * @author jialiang.linjl
  */
+
+/**
+ * 限流算法用以控制通过的流量始终在限流阈值内，不同限流算法还可以控制流量到达的某种效果
+ * 1、控制超阈值流量快速失败的【计数器算法】
+ * 2、允许一定数量的请求等待通过的【漏斗算法】
+ * 3、控制流量匀速通过且允许流量在一定成都上突增的【令牌桶算法】
+ */
 public interface TrafficShapingController {
 
     /**
@@ -31,6 +38,14 @@ public interface TrafficShapingController {
      * @param acquireCount count to acquire
      * @param prioritized whether the request is prioritized
      * @return true if the resource entry can pass; false if it should be blocked
+     */
+    /**
+     * 是否允许通过
+     * @param node 根据limitApp与strategy选出来的Node
+     * @param acquireCount  与并发编程方法AQS#tryAcquire的参数作用一样，值一般为1；当限流规则配置的限流阈值类型为Threads时，表示需要申请一个线程；
+     *                      当限流规则配置的限流阈值类型为QPS时，表示需要申请放行一个请求
+     * @param prioritized   表示是否对请求进行优先级排序
+     * @return
      */
     boolean canPass(Node node, int acquireCount, boolean prioritized);
 

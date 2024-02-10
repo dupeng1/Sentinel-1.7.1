@@ -39,6 +39,10 @@ import com.alibaba.csp.sentinel.util.function.Function;
  *
  * @author Eric Zhao
  */
+
+/**
+ * 根据资源的实时指标数据检查是否达到限流规则的阈值，只要达到某个限流规则的阈值，就抛出FlowException或采用流量效果控制器处理超出阈值的流量
+ */
 public class FlowRuleChecker {
 
     public void checkFlow(Function<String, Collection<FlowRule>> ruleProvider, ResourceWrapper resource,
@@ -46,10 +50,14 @@ public class FlowRuleChecker {
         if (ruleProvider == null || resource == null) {
             return;
         }
+        //1、调用FlowSlot传递过来的ruleProvider的apply方法获取当前【资源】的所有限流规则
         Collection<FlowRule> rules = ruleProvider.apply(resource.getName());
         if (rules != null) {
+            //2、遍历限流规则，只要由一个限流规则达到限流阈值即可抛出FlowException
             for (FlowRule rule : rules) {
+                //3、调用canPassCheck方法判断是否放行当前请求
                 if (!canPassCheck(rule, context, node, count, prioritized)) {
+                    //FlowException是BlockException子类，使用FlowException目的是标志当前请求因为达到限流阈值而被拒绝
                     throw new FlowException(rule.getLimitApp(), rule);
                 }
             }
@@ -61,28 +69,41 @@ public class FlowRuleChecker {
         return canPassCheck(rule, context, node, acquireCount, false);
     }
 
+    /**
+     * 检查是否允许当前请求通过，若canPassCheck方法返回true，则说明允许当前请求通过，否则不允许当前请求通过
+     * @param rule
+     * @param context
+     * @param node
+     * @param acquireCount
+     * @param prioritized
+     * @return
+     */
     public boolean canPassCheck(/*@NonNull*/ FlowRule rule, Context context, DefaultNode node, int acquireCount,
                                                     boolean prioritized) {
+        //1、指定当前限流规则只对哪个调用来源生效，默认为default，即不限定调用来源
         String limitApp = rule.getLimitApp();
         if (limitApp == null) {
             return true;
         }
-
+        //2、指定是否是集群限流模式，如果是集群限流模式，则调用passClusterCheck方法完成canPassCheck
         if (rule.isClusterMode()) {
             return passClusterCheck(rule, context, node, acquireCount, prioritized);
         }
-
+        //3、如果是非集群限流模式，则调用passLocalCheck方法完成canPassCheck
         return passLocalCheck(rule, context, node, acquireCount, prioritized);
     }
 
     private static boolean passLocalCheck(FlowRule rule, Context context, DefaultNode node, int acquireCount,
                                           boolean prioritized) {
+        //根据调用来源和调用关系限流策略选择Node
         Node selectedNode = selectNodeByRequesterAndStrategy(rule, context, node);
         if (selectedNode == null) {
             return true;
         }
-
-        return rule.getRater().canPass(selectedNode, acquireCount, prioritized);
+        //获取限流规则配置的流量效果控制器（TrafficShapingController）
+        return rule.getRater()
+                //调用流量效果控制器的 canPass 方法完成 canPassCheck
+                .canPass(selectedNode, acquireCount, prioritized);
     }
 
     static Node selectReferenceNode(FlowRule rule, Context context, DefaultNode node) {
@@ -94,6 +115,7 @@ public class FlowRuleChecker {
         }
 
         if (strategy == RuleConstant.STRATEGY_RELATE) {
+            //取引用资源对应调用来源的ClusterNode
             return ClusterBuilderSlot.getClusterNode(refResource);
         }
 
@@ -101,6 +123,7 @@ public class FlowRuleChecker {
             if (!refResource.equals(context.getName())) {
                 return null;
             }
+            //取当前资源的DefaultNode
             return node;
         }
         // No node.
@@ -112,29 +135,40 @@ public class FlowRuleChecker {
         return !RuleConstant.LIMIT_APP_DEFAULT.equals(origin) && !RuleConstant.LIMIT_APP_OTHER.equals(origin);
     }
 
+    //根据调用来源和调用关系限流策略选择Node，就是根据限流规则配置limitApp与strategy选择一个Node
     static Node selectNodeByRequesterAndStrategy(/*@NonNull*/ FlowRule rule, Context context, DefaultNode node) {
         // The limit app should not be empty.
+        //表示限流规则仅对指定调用来源生效
         String limitApp = rule.getLimitApp();
+        //表示限流规则使用的调用关系限流策略
         int strategy = rule.getStrategy();
+        //表示当前请求的调用来源
         String origin = context.getOrigin();
-
+        //针对指定调用来源限流
         if (limitApp.equals(origin) && filterOrigin(origin)) {
             if (strategy == RuleConstant.STRATEGY_DIRECT) {
                 // Matches limit origin, return origin statistic node.
+                //取对应调用来源的StatisticNode
                 return context.getOriginNode();
             }
 
             return selectReferenceNode(rule, context, node);
-        } else if (RuleConstant.LIMIT_APP_DEFAULT.equals(limitApp)) {
+        }
+        //针对所有调用来源限流
+        else if (RuleConstant.LIMIT_APP_DEFAULT.equals(limitApp)) {
             if (strategy == RuleConstant.STRATEGY_DIRECT) {
                 // Return the cluster node.
+                //取当前资源的ClusterNode
                 return node.getClusterNode();
             }
 
             return selectReferenceNode(rule, context, node);
-        } else if (RuleConstant.LIMIT_APP_OTHER.equals(limitApp)
+        }
+        //既不是针对所有调用来源限流，也没有规则针对当前调用来源限流，如果此时围绕该资源配置的所有限流规则都没有针对当前调用来限流，当前规则才会生效
+        else if (RuleConstant.LIMIT_APP_OTHER.equals(limitApp)
             && FlowRuleManager.isOtherOrigin(origin, rule.getResource())) {
             if (strategy == RuleConstant.STRATEGY_DIRECT) {
+                //取对应调用来源的StatisticNode
                 return context.getOriginNode();
             }
 

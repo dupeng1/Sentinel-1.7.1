@@ -241,7 +241,9 @@ public class ArrayMetric implements Metric {
 
     @Override
     public void addPass(int count) {
+        //由滑动窗口根据当前时间戳获取当前时间窗口的MetricBucket实例
         WindowWrap<MetricBucket> wrap = data.currentWindow();
+        //调用MetricBucket实例的addPass方法，将pass这项指标的值加上方法参数count的值
         wrap.value().addPass(count);
     }
 

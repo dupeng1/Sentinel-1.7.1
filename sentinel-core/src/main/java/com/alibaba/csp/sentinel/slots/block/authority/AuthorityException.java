@@ -23,6 +23,10 @@ import com.alibaba.csp.sentinel.slots.block.BlockException;
  * @author youji.zj
  * @author Eric Zhao
  */
+
+/**
+ * 授权异常
+ */
 public class AuthorityException extends BlockException {
 
     public AuthorityException(String ruleLimitApp) {

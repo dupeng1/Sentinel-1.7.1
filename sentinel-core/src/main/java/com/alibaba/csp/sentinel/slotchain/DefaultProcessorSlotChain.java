@@ -21,8 +21,14 @@ import com.alibaba.csp.sentinel.context.Context;
  * @author qinan.qn
  * @author jialiang.linjl
  */
+
+/**
+ * Sentinel会为每个资源创建且仅创建一个ProcessorSlotChain实例，ProcessorSlotChain实例被缓存在CtSph类的chainMap静态字段中，key
+ * 为资源ID，每个资源的ProcessorSlotChain实例在CtSph#entryWithPriority方法中被创建
+ */
 public class DefaultProcessorSlotChain extends ProcessorSlotChain {
 
+    //指向链表头节点
     AbstractLinkedProcessorSlot<?> first = new AbstractLinkedProcessorSlot<Object>() {
 
         @Override
@@ -37,8 +43,10 @@ public class DefaultProcessorSlotChain extends ProcessorSlotChain {
         }
 
     };
+    //指向链表尾节点
     AbstractLinkedProcessorSlot<?> end = first;
 
+    //在链表头部添加一个节点
     @Override
     public void addFirst(AbstractLinkedProcessorSlot<?> protocolProcessor) {
         protocolProcessor.setNext(first.getNext());
@@ -48,6 +56,7 @@ public class DefaultProcessorSlotChain extends ProcessorSlotChain {
         }
     }
 
+    //在链表尾部添加一个节点
     @Override
     public void addLast(AbstractLinkedProcessorSlot<?> protocolProcessor) {
         end.setNext(protocolProcessor);
@@ -69,12 +78,16 @@ public class DefaultProcessorSlotChain extends ProcessorSlotChain {
         return first.getNext();
     }
 
+    //调用链表头节点的entry方法，由头节点调用下一节点的entry方法
+    //ProcessorSlot实例的entry方法是按ProcessorSlot实例在链表中的顺序被调用的
     @Override
     public void entry(Context context, ResourceWrapper resourceWrapper, Object t, int count, boolean prioritized, Object... args)
         throws Throwable {
         first.transformEntry(context, resourceWrapper, t, count, prioritized, args);
     }
 
+    //调用链表尾头节点的exit方法，由头节点调用下一节点的exit方法
+    //ProcessorSlot实例的exit方法被调用的顺序是从后往前走的
     @Override
     public void exit(Context context, ResourceWrapper resourceWrapper, int count, Object... args) {
         first.exit(context, resourceWrapper, count, args);

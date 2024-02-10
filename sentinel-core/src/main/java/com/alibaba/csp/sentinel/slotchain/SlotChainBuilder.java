@@ -22,6 +22,10 @@ package com.alibaba.csp.sentinel.slotchain;
  * @author leyou
  * @author Eric Zhao
  */
+
+/**
+ * 将多个ProcessorSlot构造成一个ProcessorSlotChain，由ProcessorSlotChain按照ProcessorSlot 的注册顺序调度这些 ProcessorSlot
+ */
 public interface SlotChainBuilder {
 
     /**

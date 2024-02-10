@@ -25,10 +25,18 @@ import com.alibaba.csp.sentinel.slots.statistic.base.LongAdder;
  * @author jialiang.linjl
  * @author Eric Zhao
  */
+
+/**
+ * 1、Bucket统计一段时间内的各项指标数据
+ * 2、指标数据包含请求总数、成功总数、异常总数、总耗时、最小耗时等
+ * 3、一个Bucket可以记录1s内的数据，也可以记录10ms内的数据，这由采样周期决定，【采样周期】就是每个Bucket的【时间窗口】大小，
+ * 4、如果想获取最近【1分钟】的【某一秒】的QPS指标数据，就需要将【滑动窗口】大小设置1分钟，【采样总数】为60，【采样周期】设置为1秒，
+ * 该滑动窗口拥有60个Bucket，每个Bucket可统计1秒的指标数据，若想要获取某一秒的Bucket，则只需要根据时间戳定位Bucket
+ */
 public class MetricBucket {
-
+    //存储各项指标的计数，包括请求成功总数、请求异常总数、总耗时。使用LongAdder数组记录一段时间内的各项指标数据
     private final LongAdder[] counters;
-
+    //只记录最小耗时
     private volatile long minRt;
 
     public MetricBucket() {

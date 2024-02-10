@@ -240,15 +240,16 @@ public final class SystemRuleManager {
     }
 
     public static void loadSystemConf(SystemRule rule) {
+        //是否开启系统自适应限流判断功能
         boolean checkStatus = false;
         // Check if it's valid.
-
+        //1、配置highestSystemLoad，若多个规则都配置，则取最小值
         if (rule.getHighestSystemLoad() >= 0) {
             highestSystemLoad = Math.min(highestSystemLoad, rule.getHighestSystemLoad());
             highestSystemLoadIsSet = true;
             checkStatus = true;
         }
-
+        //2、配置highestCpuUsage，若多个规则都配置，则取最小值
         if (rule.getHighestCpuUsage() >= 0) {
             if (rule.getHighestCpuUsage() > 1) {
                 RecordLog.warn(String.format("[SystemRuleManager] Ignoring invalid SystemRule: "
@@ -259,18 +260,19 @@ public final class SystemRuleManager {
                 checkStatus = true;
             }
         }
-
+        //3、配置avg，若多个规则都配置，则取最小值
         if (rule.getAvgRt() >= 0) {
             maxRt = Math.min(maxRt, rule.getAvgRt());
             maxRtIsSet = true;
             checkStatus = true;
         }
+        //4、配置maxThread，若多个规则都配置，则取最小值
         if (rule.getMaxThread() >= 0) {
             maxThread = Math.min(maxThread, rule.getMaxThread());
             maxThreadIsSet = true;
             checkStatus = true;
         }
-
+        //5、配置qps，若多个规则都配置，则取最小值
         if (rule.getQps() >= 0) {
             qps = Math.min(qps, rule.getQps());
             qpsIsSet = true;
@@ -292,33 +294,38 @@ public final class SystemRuleManager {
             return;
         }
         // Ensure the checking switch is on.
+        //若配置了SystemRule，则checkSystemStatus为true
         if (!checkSystemStatus.get()) {
             return;
         }
 
         // for inbound traffic only
+        //只限流量类型为IN的资源
         if (resourceWrapper.getEntryType() != EntryType.IN) {
             return;
         }
 
         // total qps
+        //实现应用级的最大 QPS 限流
         double currentQps = Constants.ENTRY_NODE == null ? 0.0 : Constants.ENTRY_NODE.successQps();
         if (currentQps > qps) {
             throw new SystemBlockException(resourceWrapper.getName(), "qps");
         }
 
         // total thread
+        //实现应用级的最大并行占用线程数限流
         int currentThread = Constants.ENTRY_NODE == null ? 0 : Constants.ENTRY_NODE.curThreadNum();
         if (currentThread > maxThread) {
             throw new SystemBlockException(resourceWrapper.getName(), "thread");
         }
-
+        //实现应用级的最大平均耗时限流
         double rt = Constants.ENTRY_NODE == null ? 0 : Constants.ENTRY_NODE.avgRt();
         if (rt > maxRt) {
             throw new SystemBlockException(resourceWrapper.getName(), "rt");
         }
 
         // load. BBR algorithm.
+        //当系统负载大于限流的负载阈值时，使用BBR算法判断是否需要限流
         if (highestSystemLoadIsSet && getCurrentSystemAvgLoad() > highestSystemLoad) {
             if (!checkBbr(currentThread)) {
                 throw new SystemBlockException(resourceWrapper.getName(), "load");
@@ -326,12 +333,19 @@ public final class SystemRuleManager {
         }
 
         // cpu usage
+        //根据CPU使用率限流
         if (highestCpuUsageIsSet && getCurrentCpuUsage() > highestCpuUsage) {
             throw new SystemBlockException(resourceWrapper.getName(), "cpu");
         }
     }
 
     private static boolean checkBbr(int currentThread) {
+        /**
+         * minRt/1000用于将最小耗时有毫秒转换为秒，表示系统在处理最多请求时的最小耗时
+         * Constants.ENTRY_NODE.maxSuccessQps()* Constants.ENTRY_NODE.minRt() / 1000表示至少需要每秒多少个线程并行才能达到
+         * Constants.ENTRY_NODE.maxSuccessQps
+         *
+         */
         if (currentThread > 1 &&
             currentThread > Constants.ENTRY_NODE.maxSuccessQps() * Constants.ENTRY_NODE.minRt() / 1000) {
             return false;

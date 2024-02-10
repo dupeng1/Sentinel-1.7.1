@@ -24,10 +24,12 @@ public enum EntryType {
     /**
      * Inbound traffic
      */
+    //流入流量，接收其他服务或前端发来的请求
     IN("IN"),
     /**
      * Outbound traffic
      */
+    //流出流量，向其他服务发起的请求
     OUT("OUT");
 
     private final String name;

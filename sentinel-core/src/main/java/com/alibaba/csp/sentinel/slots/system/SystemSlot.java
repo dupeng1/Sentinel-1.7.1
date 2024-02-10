@@ -27,6 +27,11 @@ import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
  * @author jialiang.linjl
  * @author leyou
  */
+
+/**
+ * 1、实现系统自适应限流，系统自适应是指系统能够在负载过高的情况下自动拒绝请求，在保证服务稳定运行的情况下尽量处理更多请求，一旦系统负载达到阈值，就拒绝请求
+ * 2、被放在FlowSlot前面，强制系统优先考虑目前的情况能否处理当前请求，是系统尽量在实现最大吞吐量的同时保证稳定性
+ */
 public class SystemSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
     @Override

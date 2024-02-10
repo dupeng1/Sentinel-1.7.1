@@ -44,8 +44,13 @@ import com.alibaba.csp.sentinel.property.SentinelProperty;
  * @author jialiang.linjl
  * @author Eric Zhao
  */
+
+/**
+ * 用来【加载】和【缓存】限流规则配置
+ */
 public class FlowRuleManager {
 
+    //缓存限流规则配置，key为资源名称，value是一个FlowRule集合
     private static final Map<String, List<FlowRule>> flowRules = new ConcurrentHashMap<String, List<FlowRule>>();
 
     private static final FlowPropertyListener LISTENER = new FlowPropertyListener();
@@ -94,10 +99,12 @@ public class FlowRuleManager {
      *
      * @param rules new rules to load.
      */
+    //加载和更新限流规则，该方法会将参数传递进来的限流规则集合转换为Map，然后先清空flowRiles当前缓存的限流规则配置，再将新的限流规则配置写入flowRiles
     public static void loadRules(List<FlowRule> rules) {
         currentProperty.updateValue(rules);
     }
 
+    //获取所有限流规则
     static Map<String, List<FlowRule>> getFlowRuleMap() {
         return flowRules;
     }

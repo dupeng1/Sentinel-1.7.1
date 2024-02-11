@@ -52,6 +52,12 @@ public class SentinelWebMvcConfig extends BaseWebMvcConfig {
         return httpMethodSpecify;
     }
 
+    /**
+     * 是否需要给资源名称加上HttpMethod前缀，例如，对于 GET 接口/hello，如果将 httpMethodSpecify 配置为 false，则资源名称为/hello，否则资源名称
+     * 为 GET:/hello
+     * @param httpMethodSpecify
+     * @return
+     */
     public SentinelWebMvcConfig setHttpMethodSpecify(boolean httpMethodSpecify) {
         this.httpMethodSpecify = httpMethodSpecify;
         return this;

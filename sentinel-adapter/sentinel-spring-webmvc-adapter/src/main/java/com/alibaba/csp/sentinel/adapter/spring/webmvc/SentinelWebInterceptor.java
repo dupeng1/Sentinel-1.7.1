@@ -47,19 +47,23 @@ public class SentinelWebInterceptor extends AbstractSentinelInterceptor {
         }
     }
 
+    //获取资源名称
     @Override
     protected String getResourceName(HttpServletRequest request) {
         // Resolve the Spring Web URL pattern from the request attribute.
+        //1、从HttpServletRequest参数的属性中获取HandlerMapping匹配的URL
         Object resourceNameObject = request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
         if (resourceNameObject == null || !(resourceNameObject instanceof String)) {
             return null;
         }
         String resourceName = (String) resourceNameObject;
+        //2、如果UrlCleaner不为空，将多个接口合并为一个接口
         UrlCleaner urlCleaner = config.getUrlCleaner();
         if (urlCleaner != null) {
             resourceName = urlCleaner.clean(resourceName);
         }
         // Add method specification if necessary
+        //3、根据SentinelWebMvcConfig配置对象判断是否需要添加HttpMethod前缀，如果需要，则给资源名称拼接前缀
         if (StringUtil.isNotEmpty(resourceName) && config.isHttpMethodSpecify()) {
             resourceName = request.getMethod().toUpperCase() + ":" + resourceName;
         }

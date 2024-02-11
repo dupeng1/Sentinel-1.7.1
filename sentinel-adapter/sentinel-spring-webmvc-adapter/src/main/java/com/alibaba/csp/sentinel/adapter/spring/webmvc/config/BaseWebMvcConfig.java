@@ -31,6 +31,7 @@ public abstract class BaseWebMvcConfig {
     protected BlockExceptionHandler blockExceptionHandler;
     protected RequestOriginParser originParser;
 
+    //设置entry在request的属性名
     public String getRequestAttributeName() {
         return requestAttributeName;
     }
@@ -43,6 +44,7 @@ public abstract class BaseWebMvcConfig {
         return blockExceptionHandler;
     }
 
+    //设置BlockException处理器，如果不想配置BlockException处理器，则可以在Spring MVC的全局异常处理器中处理BlockException
     public void setBlockExceptionHandler(BlockExceptionHandler blockExceptionHandler) {
         this.blockExceptionHandler = blockExceptionHandler;
     }
@@ -51,6 +53,7 @@ public abstract class BaseWebMvcConfig {
         return originParser;
     }
 
+    //注册调用来源解析器，从请求头中获取S-user参数的值作为调用来源名称，在向下游服务发起请求时在请求头写入S-user参数
     public void setOriginParser(RequestOriginParser originParser) {
         this.originParser = originParser;
     }

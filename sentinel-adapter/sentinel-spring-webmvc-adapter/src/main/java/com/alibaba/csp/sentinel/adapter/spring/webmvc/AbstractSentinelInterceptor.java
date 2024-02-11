@@ -37,6 +37,15 @@ import org.springframework.web.servlet.ModelAndView;
  * @author kaizi2009
  * @since 1.7.1
  */
+
+/**
+ * 1、HandlerInterceptor在DispatcherServlet#doDispatch 方法中被调用，每个方法的调用时机如下
+ * preHandle：在调用接口方法之前被调用
+ * postHandle：在接口方法执行完成并返回ModelAndView时被调用
+ * afterCompletion：在接口方法执行完成时被调用，无论执行成功或发生异常都会被调用
+ * 2、在HandlerInterceptor#preHandle方法中调用ContextUtil#enter方法、SphU#entry方法，在afterCompletion方法中根据方法参数ex是否为空来处理异常情况，
+ * 并且完成 Entry#exit方法及ContextUtil#exit方法的调用
+ */
 public abstract class AbstractSentinelInterceptor implements HandlerInterceptor {
 
     public static final String SENTINEL_SPRING_WEB_CONTEXT_NAME = "sentinel_spring_web_context";
@@ -54,18 +63,24 @@ public abstract class AbstractSentinelInterceptor implements HandlerInterceptor 
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
         throws Exception {
         try {
+            //1、获取资源名称
             String resourceName = getResourceName(request);
 
             if (StringUtil.isNotEmpty(resourceName)) {
                 // Parse the request origin using registered origin parser.
+                //2、解析调用来源，如从请求头中获取S-user参数的值
                 String origin = parseOrigin(request);
+                //3、调用ContextUtil.enter方法，调用链入口名称为sentinel_spring_web_context
                 ContextUtil.enter(SENTINEL_SPRING_WEB_CONTEXT_NAME, origin);
+                //4、调用SphU#entry方法，资源类型为COMMON_WEB，流量类型为IN
                 Entry entry = SphU.entry(resourceName, ResourceTypeConstants.COMMON_WEB, EntryType.IN);
-
+                //5、将 SphU#entry 方法返回的 Entry 实例放入 HttpServletRequest 参数的属性表中，
+                // 方便在AbstractSentinelInterceptor#afterCompletion方法处理BlockException
                 setEntryInRequest(request, baseWebMvcConfig.getRequestAttributeName(), entry);
             }
             return true;
         } catch (BlockException e) {
+            //6、如果抛出BlockException，则说明当前请求被拒绝，需要调用handleBlockException方法处理BlockException
             handleBlockException(request, response, e);
             return false;
         }
@@ -82,11 +97,14 @@ public abstract class AbstractSentinelInterceptor implements HandlerInterceptor 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
                                 Object handler, Exception ex) throws Exception {
+        //1、从HttpServletRequest参数的属性表中获取preHandle方法中的Entry实例
         Entry entry = getEntryInRequest(request, baseWebMvcConfig.getRequestAttributeName());
         if (entry != null) {
+            //2、调用AbstractSentinelInterceptor#traceExceptionAndExit方法
             traceExceptionAndExit(entry, ex);
             removeEntryInRequest(request);
         }
+        //3、调用ContextUtil#exit方法
         ContextUtil.exit();
     }
 
@@ -114,6 +132,7 @@ public abstract class AbstractSentinelInterceptor implements HandlerInterceptor 
         request.removeAttribute(baseWebMvcConfig.getRequestAttributeName());
     }
 
+    //当方法执行抛出异常时，调用Tracer#traceEntry方法统计异常指标数据
     protected void traceExceptionAndExit(Entry entry, Exception ex) {
         if (entry != null) {
             if (ex != null) {
@@ -125,6 +144,8 @@ public abstract class AbstractSentinelInterceptor implements HandlerInterceptor 
 
     protected void handleBlockException(HttpServletRequest request, HttpServletResponse response, BlockException e)
         throws Exception {
+        //若SentinelWebMvcConfig配置了BlockExceptionHandler，则调用BlockExceptionHandler#handle方法处理BlockException，
+        //否则将抛出BlockException，并由全局处理器处理
         if (baseWebMvcConfig.getBlockExceptionHandler() != null) {
             baseWebMvcConfig.getBlockExceptionHandler().handle(request, response, e);
         } else {

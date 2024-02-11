@@ -42,6 +42,10 @@ import com.alibaba.csp.sentinel.util.AssertUtil;
  * @author Eric Zhao
  * @since 1.4.0
  */
+
+/**
+ * 集群限流服务端配置管理
+ */
 public final class ClusterServerConfigManager {
 
     private static boolean embedded = false;

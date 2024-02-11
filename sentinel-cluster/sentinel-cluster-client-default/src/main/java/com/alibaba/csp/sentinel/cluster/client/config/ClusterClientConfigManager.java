@@ -102,6 +102,10 @@ public final class ClusterClientConfigManager {
         clientConfigProperty.updateValue(config);
     }
 
+    //调用当前方法之前，先调用setNamespaceSupplier方法注册名称空间
+    //当集群限流客户端连接上集群限流服务端时，会立即发送一个PING类型的消息给集群限流服务端
+    //Sentinel会将名称空间携带再PING数据包上传递给集群限流服务端
+    //集群限流服务端以此获得每个集群限流客户端连接的名称空间
     public static void applyNewAssignConfig(ClusterClientAssignConfig clusterClientAssignConfig) {
         clientAssignProperty.updateValue(clusterClientAssignConfig);
     }

@@ -24,6 +24,10 @@ import com.alibaba.csp.sentinel.cluster.TokenService;
  * @author Eric Zhao
  * @since 1.4.0
  */
+
+/**
+ * 集群限流客户端需实现的接口
+ */
 public interface ClusterTokenClient extends TokenService {
 
     /**
@@ -38,6 +42,7 @@ public interface ClusterTokenClient extends TokenService {
      *
      * @throws Exception some error occurs
      */
+    //启动集群限流客户端，负责维护集群限流客户端与集群限流服务端的连接
     void start() throws Exception;
 
     /**
@@ -45,6 +50,7 @@ public interface ClusterTokenClient extends TokenService {
      *
      * @throws Exception some error occurs
      */
+    //停止集群限流客户端，负责维护集群限流客户端与集群限流服务端的连接
     void stop() throws Exception;
 
     /**

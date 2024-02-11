@@ -19,6 +19,11 @@ package com.alibaba.csp.sentinel.cluster.client.config;
  * @author Eric Zhao
  * @since 1.4.1
  */
+
+/**
+ *客户端连接服务端配置
+ * 当动态改变ClusterClientAssignConfig时，Sentinel将重新创建集群限流客户端与集群限流服务端的连接
+ */
 public class ClusterClientAssignConfig {
 
     private String serverHost;

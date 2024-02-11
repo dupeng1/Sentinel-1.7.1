@@ -181,12 +181,16 @@ public class FlowRuleChecker {
     private static boolean passClusterCheck(FlowRule rule, Context context, DefaultNode node, int acquireCount,
                                             boolean prioritized) {
         try {
+            //1、获取TokenService实例
             TokenService clusterService = pickClusterService();
             if (clusterService == null) {
                 return fallbackToLocalOrPass(rule, context, node, acquireCount, prioritized);
             }
+            //2、获取集群限流规则的全局唯一ID
             long flowId = rule.getClusterConfig().getFlowId();
+            //3、调用TokenService#requestToken方法申请令牌，将方法参数构造为请求数据包，再向集群限流服务端发起请求，并同步等待获取集群限流服务端的响应结果
             TokenResult result = clusterService.requestToken(flowId, acquireCount, prioritized);
+            //4、调用 applyTokenResult 方法处理响应结果
             return applyTokenResult(result, rule, context, node, acquireCount, prioritized);
             // If client is absent, then fallback to local mode.
         } catch (Throwable ex) {
@@ -207,25 +211,32 @@ public class FlowRuleChecker {
         }
     }
 
+    //根据节点当前角色获取TokenService实例，如果当前节点是集群限流客户端角色，则获取的TokenService实例类型是ClusterTokenClient
+    //如果当前节点是集群限流服务端角色（嵌入式模式），则获取的TokenService实例类型是EmbeddedClusterTokenServer
     private static TokenService pickClusterService() {
+        //集群限流客户端角色
         if (ClusterStateManager.isClient()) {
             return TokenClientProvider.getClient();
         }
+        //集群限流服务端角色（嵌入式模式）
         if (ClusterStateManager.isServer()) {
             return EmbeddedClusterTokenServerProvider.getServer();
         }
         return null;
     }
 
+    //根据响应状态码决定是否拒绝当前请求
     private static boolean applyTokenResult(/*@NonNull*/ TokenResult result, FlowRule rule, Context context,
                                                          DefaultNode node,
                                                          int acquireCount, boolean prioritized) {
         switch (result.getStatus()) {
             case TokenResultStatus.OK:
+                //当响应状态码为OK时，放行请求
                 return true;
             case TokenResultStatus.SHOULD_WAIT:
                 // Wait for next tick.
                 try {
+                    //休眠指定时间再放行请求
                     Thread.sleep(result.getWaitInMs());
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -235,9 +246,11 @@ public class FlowRuleChecker {
             case TokenResultStatus.BAD_REQUEST:
             case TokenResultStatus.FAIL:
             case TokenResultStatus.TOO_MANY_REQUEST:
+                //根据规则配置的fallbackToLocalWhenFail是否为true决定是否回退为本地限流，如果需要回退为本地限流，则调用passLocalCheck方法重新判断
                 return fallbackToLocalOrPass(rule, context, node, acquireCount, prioritized);
             case TokenResultStatus.BLOCKED:
             default:
+                //直接拒绝请求
                 return false;
         }
     }

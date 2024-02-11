@@ -28,6 +28,7 @@ import com.alibaba.csp.sentinel.cluster.TokenService;
  * @author Eric Zhao
  * @since 1.4.0
  */
+//当使用嵌入式模式启动集群限流服务端时，使用的TokenService实现类是DefaultEmbeddedTokenServer
 public class DefaultEmbeddedTokenServer implements EmbeddedClusterTokenServer {
 
     private final TokenService tokenService = TokenServiceProvider.getService();

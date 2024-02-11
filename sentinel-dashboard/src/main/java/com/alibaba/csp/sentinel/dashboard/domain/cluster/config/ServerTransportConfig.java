@@ -19,12 +19,19 @@ package com.alibaba.csp.sentinel.dashboard.domain.cluster.config;
  * @author Eric Zhao
  * @since 1.4.0
  */
+
+/**
+ * 服务端传输层配置，包括监听端口、连接最大空闲时间
+ * 当动态改变ServerTransportConfig时，Sentinel将重启集群限流服务端
+ */
 public class ServerTransportConfig {
 
     public static final int DEFAULT_PORT = 18730;
     public static final int DEFAULT_IDLE_SECONDS = 600;
 
+    //监听端口
     private Integer port;
+    //连接最大空闲时间
     private Integer idleSeconds;
 
     public ServerTransportConfig() {

@@ -31,19 +31,26 @@ import com.alibaba.csp.sentinel.slots.block.flow.param.ParamFlowRule;
  * @author Eric Zhao
  * @since 1.4.0
  */
+
+/**
+ * 当使用独立应用模式启动集群限流服务端时，使用的是DefaultTokenService
+ * 无论是集群限流服务端接收集群限流客户端发来的requestToken请求，还是在嵌入式模式下自己向自己发起请求，最终都会交给DefaultTokenService处理
+ */
 public class DefaultTokenService implements TokenService {
 
     @Override
     public TokenResult requestToken(Long ruleId, int acquireCount, boolean prioritized) {
+        //验证规则是否存在，只使用一个ID字段向集群限流服务端传递限流规则，减小了数据包的大小，优化了网络通信的性能
         if (notValidRequest(ruleId, acquireCount)) {
             return badRequest();
         }
         // The rule should be valid.
+        //1、根据集群限流规则ID获取限流规则
         FlowRule rule = ClusterFlowRuleManager.getFlowRuleById(ruleId);
         if (rule == null) {
             return new TokenResult(TokenResultStatus.NO_RULE_EXISTS);
         }
-
+        //2、调用ClusterFlowChecker#acquireClusterToken方法继续处理请求
         return ClusterFlowChecker.acquireClusterToken(rule, acquireCount, prioritized);
     }
 

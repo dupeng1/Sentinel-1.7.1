@@ -24,12 +24,13 @@ import java.util.Map;
  * @since 1.4.0
  */
 public class TokenResult {
-
+    //请求的响应状态码
     private Integer status;
-
+    //当前时间窗口剩余的令牌数
     private int remaining;
+    //休眠等待时间，单位为毫秒，用于通知集群限流客户端当前请求可以放行，但需要先休眠指定时间后才能放行
     private int waitInMs;
-
+    //附带的属性，暂未使用
     private Map<String, String> attachments;
 
     public TokenResult() {}

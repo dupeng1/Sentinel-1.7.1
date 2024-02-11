@@ -23,6 +23,11 @@ import java.util.Collection;
  * @author Eric Zhao
  * @since 1.4.0
  */
+
+/**
+ * 定义集群限流客户端向集群限流服务端申请Token的接口，由FlowRuleChecker调用
+ * 集群限流客户端与集群限流服务端通信的RPC接口
+ */
 public interface TokenService {
 
     /**
@@ -33,6 +38,7 @@ public interface TokenService {
      * @param prioritized whether the request is prioritized
      * @return result of the token request
      */
+    //向server申请令牌，参数1为集群限流规则ID，参数2为申请令牌数，参数3为请求优先级
     TokenResult requestToken(Long ruleId, int acquireCount, boolean prioritized);
 
     /**
@@ -43,5 +49,6 @@ public interface TokenService {
      * @param params parameter list
      * @return result of the token request
      */
+    //用于支持热点参数集群限流向server申请令牌，参数1为集群限流规则ID，参数2为申请的令牌数，参数3为限流参数
     TokenResult requestParamToken(Long ruleId, int acquireCount, Collection<Object> params);
 }

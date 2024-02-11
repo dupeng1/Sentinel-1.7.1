@@ -353,11 +353,13 @@ public final class ClusterFlowRuleManager {
             flowIdSet.add(flowId);
 
             // Prepare cluster metric from valid flow ID.
+            //如果不存在，则为规则创建ClusterMetric，用于统计指标数据
             ClusterMetricStatistics.putMetricIfAbsent(flowId,
                 new ClusterMetric(clusterConfig.getSampleCount(), clusterConfig.getWindowIntervalMs()));
         }
 
         // Cleanup unused cluster metrics.
+        //移除不再使用的ClusterMetric
         clearAndResetRulesConditional(namespace, new Predicate<Long>() {
             @Override
             public boolean test(Long flowId) {

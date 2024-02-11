@@ -23,5 +23,10 @@ import com.alibaba.csp.sentinel.cluster.TokenService;
  * @author Eric Zhao
  * @since 1.4.0
  */
+
+/**
+ * 支持嵌入式模式的集群限流服务端需要实现的接口
+ * 整合了集群限流客户端和集群限流服务端的功能，为嵌入式模式提供支持，在嵌入式模式下，如果当前节点是集群限流服务端，就没有必要发起网络请求
+ */
 public interface EmbeddedClusterTokenServer extends ClusterTokenServer, TokenService {
 }

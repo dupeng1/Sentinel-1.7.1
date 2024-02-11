@@ -29,6 +29,7 @@ public class ParamFlowStatisticExitCallback implements ProcessorSlotExitCallback
 
     @Override
     public void onExit(Context context, ResourceWrapper resourceWrapper, int count, Object... args) {
+        //并行占用线程总数自减
         if (context.getCurEntry().getError() == null) {
             ParameterMetric parameterMetric = ParameterMetricStorage.getParamMetric(resourceWrapper);
 

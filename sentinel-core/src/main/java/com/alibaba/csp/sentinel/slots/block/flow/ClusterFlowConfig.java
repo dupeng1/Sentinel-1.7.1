@@ -24,28 +24,38 @@ import com.alibaba.csp.sentinel.slots.block.RuleConstant;
  * @author Eric Zhao
  * @since 1.4.0
  */
+
+/**
+ * 集群限流规则
+ */
 public class ClusterFlowConfig {
 
     /**
      * Global unique ID.
      */
+    //集群限流规则的全局唯一ID
     private Long flowId;
 
     /**
      * Threshold type (average by local value or global value).
      */
+    //集群限流阈值类型，支持单机均摊和集群总阈值两种集群限流阈值类型
+            //单机均摊：将当前连接到集群限流服务端的集群限流客户端节点数乘以规则配置的count的结果作为集群的QPS限流阈值
+            //集群总阈值：将规则配置的count作为集群的QPS限流阈值
     private int thresholdType = ClusterRuleConstant.FLOW_THRESHOLD_AVG_LOCAL;
+    //失败时是否回退为本地限流模式
     private boolean fallbackToLocalWhenFail = true;
 
     /**
      * 0: normal.
      */
     private int strategy = ClusterRuleConstant.FLOW_CLUSTER_STRATEGY_NORMAL;
-
+    //滑动窗口构造方法的参数之一，指定WindowWrap的数组大小
     private int sampleCount = ClusterRuleConstant.DEFAULT_CLUSTER_SAMPLE_COUNT;
     /**
      * The time interval length of the statistic sliding window (in milliseconds)
      */
+    // 滑动窗口构造方法的参数之一，指定滑动窗口的周期
     private int windowIntervalMs = RuleConstant.DEFAULT_WINDOW_INTERVAL_MS;
 
     public Long getFlowId() {

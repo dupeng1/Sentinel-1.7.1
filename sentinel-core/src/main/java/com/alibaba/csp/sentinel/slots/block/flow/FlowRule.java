@@ -95,10 +95,12 @@ public class FlowRule extends AbstractRule {
     //最大排队等候时间，单位为毫秒
     private int maxQueueingTimeMs = 500;
 
+    //是否集群限流
     private boolean clusterMode;
     /**
      * Flow rule config for cluster mode.
      */
+    //集群配置
     private ClusterFlowConfig clusterConfig;
 
     /**

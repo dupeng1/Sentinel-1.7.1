@@ -33,6 +33,10 @@ import com.alibaba.csp.sentinel.slots.block.RuleConstant;
  * @author Eric Zhao
  * @since 0.2.0
  */
+
+/**
+ * 参数限流规则
+ */
 public class ParamFlowRule extends AbstractRule {
 
     public ParamFlowRule() {}
@@ -44,25 +48,31 @@ public class ParamFlowRule extends AbstractRule {
     /**
      * The threshold type of flow control (0: thread count, 1: QPS).
      */
+    //限流规则的阈值类型，支持的类型与FlowRule相同
     private int grade = RuleConstant.FLOW_GRADE_QPS;
 
     /**
      * Parameter index.
      */
+    //参数索引，ParamFlowChecker根据限流规则的参数索引获取参数的只，下标从0开始。例如apiHello(String name)方法只有一个参数，索引为0对应name参数
     private Integer paramIdx;
 
     /**
      * The threshold count.
      */
+    //阈值，支持的类型与FlowRule相同
     private double count;
 
     /**
      * Traffic shaping behavior (since 1.6.0).
      */
+    //流量控制效果，支持的类型与FlowRule相同，但只支持快速失败和匀速排队
     private int controlBehavior = RuleConstant.CONTROL_BEHAVIOR_DEFAULT;
-
+    //实现匀速排队流量控制效果的虚拟队列最大等待时间，超过该值的请求被抛弃，支持的类型与FlowRule相同
     private int maxQueueingTimeMs = 0;
+    //支持的突发流量总数
     private int burstCount = 0;
+    //统计指标数据的时间窗口大小，单位为秒
     private long durationInSec = 1;
 
     /**

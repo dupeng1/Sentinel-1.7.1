@@ -32,6 +32,10 @@ import com.alibaba.csp.sentinel.slots.system.SystemSlot;
  * @author Eric Zhao
  * @since 0.2.0
  */
+
+/**
+ * 自定义的SlotChainBuilder
+ */
 public class HotParamSlotChainBuilder implements SlotChainBuilder {
 
     @Override
@@ -41,6 +45,7 @@ public class HotParamSlotChainBuilder implements SlotChainBuilder {
         chain.addLast(new ClusterBuilderSlot());
         chain.addLast(new LogSlot());
         chain.addLast(new StatisticSlot());
+        //ParamFlowSlot放置在StatisticSlot的后面
         chain.addLast(new ParamFlowSlot());
         chain.addLast(new SystemSlot());
         chain.addLast(new AuthoritySlot());

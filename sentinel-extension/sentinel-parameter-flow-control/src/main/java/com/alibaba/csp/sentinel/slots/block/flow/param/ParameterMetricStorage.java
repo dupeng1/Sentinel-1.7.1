@@ -26,6 +26,11 @@ import com.alibaba.csp.sentinel.util.StringUtil;
  * @author Eric Zhao
  * @since 1.6.1
  */
+
+/**
+ * 实现类似于EntranceNode的功能，管理和存储每个资源对应的ParameterMetric
+ * 使用ConcurrentHashMap缓存每个资源对应的ParameterMetric，且只会为配置了参数限流规则的资源创建一个ParameterMetric
+ */
 public final class ParameterMetricStorage {
 
     private static final Map<String, ParameterMetric> metricsMap = new ConcurrentHashMap<>();
@@ -42,6 +47,11 @@ public final class ParameterMetricStorage {
      * @param resourceWrapper resource to init
      * @param rule            relevant rule
      */
+    /**
+     * 用于为资源创建ParameterMetric实例并初始化，该方法在资源被访问时由ParamFlowSlot调用，并且该方法只在为资源配置了参数限流规则的情况下被调用
+     * @param resourceWrapper
+     * @param rule
+     */
     public static void initParamMetricsFor(ResourceWrapper resourceWrapper, /*@Valid*/ ParamFlowRule rule) {
         if (resourceWrapper == null || resourceWrapper.getName() == null) {
             return;
@@ -49,6 +59,7 @@ public final class ParameterMetricStorage {
         String resourceName = resourceWrapper.getName();
         ParameterMetric metric;
         // Assume that the resource is valid.
+        //双重检测，线程安全，为资源创建全局唯一的ParameterMetric实例
         if ((metric = metricsMap.get(resourceName)) == null) {
             synchronized (LOCK) {
                 if ((metric = metricsMap.get(resourceName)) == null) {
@@ -58,6 +69,7 @@ public final class ParameterMetricStorage {
                 }
             }
         }
+        //初始化ParameterMetric实例
         metric.initialize(rule);
     }
 

@@ -42,6 +42,9 @@ import com.alibaba.dubbo.rpc.RpcException;
  * @author leyou
  * @author Eric Zhao
  */
+/**
+ * Sentinel适配Dubbo框架的过滤器，只在客户端使用
+ */
 @Activate(group = "consumer")
 public class SentinelDubboConsumerFilter extends AbstractDubboFilter implements Filter {
 

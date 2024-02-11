@@ -243,8 +243,10 @@ public abstract class AbstractSentinelAspectSupport {
             clazz = locationClass[0];
         } else {
             // By default current class.
+            //当前拦截方法所属类
             clazz = pjp.getTarget().getClass();
         }
+        //从指定处理器类型中寻找方法、从当前拦截方法所属类中寻找方法
         MethodWrapper m = ResourceMetadataRegistry.lookupBlockHandler(clazz, name);
         if (m == null) {
             // First time, resolve the block handler.
@@ -263,12 +265,14 @@ public abstract class AbstractSentinelAspectSupport {
                                                boolean mustStatic) {
         Method originMethod = resolveMethod(pjp);
         Class<?>[] originList = originMethod.getParameterTypes();
+        //参数类型与拦截方法的参数类型相匹配，并且多出一个接收异常的参数
         Class<?>[] parameterTypes = Arrays.copyOf(originList, originList.length + 1);
         parameterTypes[parameterTypes.length - 1] = BlockException.class;
         return findMethod(mustStatic, clazz, name, originMethod.getReturnType(), parameterTypes);
     }
 
     private boolean checkStatic(boolean mustStatic, Method method) {
+        //从指定处理器类型中寻找方法，要求方法是一个静态方法
         return !mustStatic || isStatic(method);
     }
 
@@ -300,10 +304,13 @@ public abstract class AbstractSentinelAspectSupport {
         return Modifier.isStatic(method.getModifiers());
     }
 
+    //所谓连接点是指哪些被拦截到的点，在spring中这些点指的是方法
     protected Method resolveMethod(ProceedingJoinPoint joinPoint) {
+        //在切面中获取被代理方法的签名信息
         MethodSignature signature = (MethodSignature)joinPoint.getSignature();
+        //拦截的类
         Class<?> targetClass = joinPoint.getTarget().getClass();
-
+        //拦截的方法
         Method method = getDeclaredMethodFor(targetClass, signature.getName(),
             signature.getMethod().getParameterTypes());
         if (method == null) {

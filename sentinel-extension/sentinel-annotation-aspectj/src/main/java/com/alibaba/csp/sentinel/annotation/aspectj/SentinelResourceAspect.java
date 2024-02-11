@@ -38,6 +38,9 @@ import java.lang.reflect.Method;
  * aspect的@around拦截标注有@SentinelResource的注解
  */
 @Aspect
+/**
+ * 切面
+ */
 public class SentinelResourceAspect extends AbstractSentinelAspectSupport {
 
     @Pointcut("@annotation(com.alibaba.csp.sentinel.annotation.SentinelResource)")
@@ -64,21 +67,26 @@ public class SentinelResourceAspect extends AbstractSentinelAspectSupport {
             Object result = pjp.proceed();
             return result;
         } catch (BlockException ex) {
+            //4、处理 BlockException，如果注解配置了blockHandlerClass和blockHandler，则使用反射调用BlockException处理器方法
             return handleBlockException(pjp, annotation, ex);
         } catch (Throwable ex) {
             Class<? extends Throwable>[] exceptionsToIgnore = annotation.exceptionsToIgnore();
             // The ignore list will be checked first.
+            //5、处理执行资源方法抛出的异常，根据exceptionsToIgnore和exceptionsToTrace配置项决定是否将此异常统计到异常指标中
             if (exceptionsToIgnore.length > 0 && exceptionBelongsTo(ex, exceptionsToIgnore)) {
                 throw ex;
             }
             if (exceptionBelongsTo(ex, annotation.exceptionsToTrace())) {
+                //统计异常指标，exceptionsToTrace指定的异常
                 traceException(ex);
+                //调用Fallback处理器处理降级，exceptionsToTrace指定的异常
                 return handleFallback(pjp, annotation, ex);
             }
 
             // No fallback function can handle the exception, so throw it out.
             throw ex;
         } finally {
+            //6、调用Entry#exit方法
             if (entry != null) {
                 entry.exit(1, pjp.getArgs());
             }

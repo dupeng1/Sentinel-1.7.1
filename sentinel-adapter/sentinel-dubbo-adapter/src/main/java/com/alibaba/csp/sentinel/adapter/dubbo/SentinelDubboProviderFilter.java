@@ -43,6 +43,9 @@ import com.alibaba.dubbo.rpc.RpcException;
  * @author leyou
  * @author Eric Zhao
  */
+/**
+ * Sentinel适配Dubbo框架的过滤器，只在服务端生效
+ */
 @Activate(group = "provider")
 public class SentinelDubboProviderFilter extends AbstractDubboFilter implements Filter {
 
@@ -53,20 +56,25 @@ public class SentinelDubboProviderFilter extends AbstractDubboFilter implements 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
         // Get origin caller.
+        //1、获取调用来源
         String application = DubboUtils.getApplication(invocation, "");
 
         Entry interfaceEntry = null;
         Entry methodEntry = null;
         try {
+            //2、生成不同粒度的资源名称
             String resourceName = getResourceName(invoker, invocation, DubboConfig.getDubboProviderPrefix());
             String interfaceName = invoker.getInterface().getName();
+            //3、调用链入口名称为方法级别的资源名称
             ContextUtil.enter(resourceName, application);
+            //4、为不同粒度资源调用SphU.entry方法
             interfaceEntry = SphU.entry(interfaceName, ResourceTypeConstants.COMMON_RPC, EntryType.IN);
             methodEntry = SphU.entry(resourceName, ResourceTypeConstants.COMMON_RPC,
                 EntryType.IN, invocation.getArguments());
 
             Result result = invoker.invoke(invocation);
             if (result.hasException()) {
+                //5、当远程响应异常时，为不同粒度资源统计异常指标
                 Throwable e = result.getException();
                 // Record common exception.
                 Tracer.traceEntry(e, interfaceEntry);
@@ -74,18 +82,22 @@ public class SentinelDubboProviderFilter extends AbstractDubboFilter implements 
             }
             return result;
         } catch (BlockException e) {
+            //6、如果抛出BlockException，则说明当前请求被拒绝，可调用注册的全局Fallback处理器完成降级逻辑处理
             return DubboFallbackRegistry.getProviderFallback().handle(invoker, invocation, e);
         } catch (RpcException e) {
+            //7、当发起调用抛出异常时，为不同粒度资源分别统计异常指标
             Tracer.traceEntry(e, interfaceEntry);
             Tracer.traceEntry(e, methodEntry);
             throw e;
         } finally {
+            //8、为不同粒度资源分别调用SphU.exit方法
             if (methodEntry != null) {
                 methodEntry.exit(1, invocation.getArguments());
             }
             if (interfaceEntry != null) {
                 interfaceEntry.exit();
             }
+            //9、调用ContextUtil#exit方法
             ContextUtil.exit();
         }
     }

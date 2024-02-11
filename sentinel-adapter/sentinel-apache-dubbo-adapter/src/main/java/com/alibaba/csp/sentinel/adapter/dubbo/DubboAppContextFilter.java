@@ -29,13 +29,19 @@ import org.apache.dubbo.rpc.RpcException;
  *
  * @author Eric Zhao
  */
+
+/**
+ * 用于客户端向服务端传递调用来源，只在客户端生效
+ */
 @Activate(group = "consumer")
 public class DubboAppContextFilter implements Filter {
 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
+        //从请求URL中获取应用名称（调用来源）
         String application = invoker.getUrl().getParameter(CommonConstants.APPLICATION_KEY);
         if (application != null) {
+            //将应用名称（调用来源）附加到请求参数中，参数名称为dubboApplication
             RpcContext.getContext().setAttachment(DubboUtils.SENTINEL_DUBBO_APPLICATION_KEY, application);
         }
         return invoker.invoke(invocation);

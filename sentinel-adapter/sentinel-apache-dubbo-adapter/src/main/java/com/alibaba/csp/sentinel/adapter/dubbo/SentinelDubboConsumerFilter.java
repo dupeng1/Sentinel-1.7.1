@@ -43,6 +43,10 @@ import org.apache.dubbo.rpc.support.RpcUtils;
  * @author Carpenter Lee
  * @author Eric Zhao
  */
+
+/**
+ * Sentinel适配Dubbo框架的过滤器，只在客户端使用
+ */
 @Activate(group = "consumer")
 public class SentinelDubboConsumerFilter extends BaseSentinelDubboFilter {
 

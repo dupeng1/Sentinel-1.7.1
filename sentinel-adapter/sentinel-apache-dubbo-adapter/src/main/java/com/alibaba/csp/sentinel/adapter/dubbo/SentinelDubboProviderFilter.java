@@ -43,6 +43,10 @@ import org.apache.dubbo.rpc.RpcException;
  * @author Carpenter Lee
  * @author Eric Zhao
  */
+
+/**
+ * Sentinel适配Dubbo框架的过滤器，只在服务端生效
+ */
 @Activate(group = "provider")
 public class SentinelDubboProviderFilter extends BaseSentinelDubboFilter {
 
@@ -58,14 +62,19 @@ public class SentinelDubboProviderFilter extends BaseSentinelDubboFilter {
         Entry interfaceEntry = null;
         Entry methodEntry = null;
         try {
+            //1、获取方法级别的资源名称
             String methodResourceName = DubboUtils.getResourceName(invoker, invocation, DubboConfig.getDubboProviderPrefix());
+            //2、获取接口级别的资源名称
             String interfaceResourceName = DubboConfig.getDubboInterfaceGroupAndVersionEnabled() ? invoker.getUrl().getColonSeparatedKey()
                     : invoker.getInterface().getName();
             // Only need to create entrance context at provider side, as context will take effect
             // at entrance of invocation chain only (for inbound traffic).
+            //3、调用链入口名称为方法级别的资源名称
             ContextUtil.enter(methodResourceName, application);
+            //4、为【接口级别的资源名称】调用
             interfaceEntry = SphU.entry(interfaceResourceName, ResourceTypeConstants.COMMON_RPC, EntryType.IN);
             rpcContext.set(DubboUtils.DUBBO_INTERFACE_ENTRY_KEY, interfaceEntry);
+            //5、为【方法级别的资源名称】调用
             methodEntry = SphU.entry(methodResourceName, ResourceTypeConstants.COMMON_RPC, EntryType.IN, invocation.getArguments());
             rpcContext.set(DubboUtils.DUBBO_METHOD_ENTRY_KEY, methodEntry);
             return invoker.invoke(invocation);
